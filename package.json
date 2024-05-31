@@ -1,0 +1,44 @@
+{
+	"name": "yapix",
+	"author": {
+		"name": "lumiknit",
+		"email": "aasr4r4@gmail.com"
+	},
+	"license": "MIT",
+	"homepage": "https://github.com/lumiknit/YAPix#README.md",
+	"description": "Yet Another Pixel Art Editor",
+	"keywords": [
+		"pixelart",
+		"image editor"
+	],
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview",
+		"size-report": "vite-bundle-visualizer",
+		"format": "prettier --write .",
+		"test": "vitest"
+	},
+	"dependencies": {
+		"@lumiknit/solid-fekit": "github:lumiknit/solid-fekit#v0.0.6",
+		"solid-icons": "^1.1.0",
+		"solid-js": "^1.8.17",
+		"solid-toast": "^0.5.0",
+		"sortablejs": "^1.15.2"
+	},
+	"devDependencies": {
+		"@types/sortablejs": "^1.15.8",
+		"eslint": "^8.57.0",
+		"eslint-plugin-solid": "^0.13.2",
+		"prettier": "^3.2.5",
+		"sass": "^1.77.2",
+		"typescript": "^5.4.5",
+		"vite": "^5.2.12",
+		"vite-bundle-visualizer": "^1.2.1",
+		"vite-plugin-solid": "^2.10.2",
+		"vitest": "^1.6.0"
+	}
+}
