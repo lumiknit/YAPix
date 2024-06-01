@@ -1,5 +1,5 @@
 {
-	"name": "yapix",
+	"name": "dubu-tl",
 	"author": {
 		"name": "lumiknit",
 		"email": "aasr4r4@gmail.com"
@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"@lumiknit/solid-fekit": "github:lumiknit/solid-fekit#v0.0.6",
+		"@tiagotrindade/solid-colorful": "^1.0.2",
 		"solid-icons": "^1.1.0",
 		"solid-js": "^1.8.17",
 		"solid-toast": "^0.5.0",

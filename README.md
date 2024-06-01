@@ -1,3 +1,3 @@
-# YAPix
+# dubu-tl
 
-Yet Another Pixelart Editor
+Yet Another Pixelart Editor.
