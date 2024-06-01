@@ -17,10 +17,9 @@ body {
 	margin: 0;
 }
 
-.canvas-root {
+.w-canvas {
+	position: relative;
+	width: 100dvw;
+	height: 50dvh;
 	border: 1px solid red;
-}
-
-canvas {
-	image-rendering: pixelated;
 }
