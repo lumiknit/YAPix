@@ -1,11 +1,16 @@
 import { Accessor, createSignal, Setter } from "solid-js";
-import { rgba, RGBA } from "./color";
+import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
+
+import { rgba, RGBA } from "../common/color";
 import { Layer, putLayerToCanvas } from "./layer";
 import { Display, ORIGIN, Pos } from "./types";
 
 export type Palette = {
 	/** Current color */
 	current: RGBA;
+
+	/** HSV */
+	hsv: HSV;
 
 	/** Previous colors */
 	history: RGBA[];
@@ -65,7 +70,8 @@ export class State {
 		this.focusedLayer = 0;
 
 		[this.palette, this.setPalette] = createSignal({
-			current: rgba(255, 255, 0, 255),
+			current: rgba(255, 255, 255, 255),
+			hsv: [0, 0, 1],
 			history: [] as RGBA[],
 		});
 
@@ -112,8 +118,25 @@ export class State {
 	useColor(color: RGBA) {
 		this.setPalette(p => ({
 			current: color,
+			hsv: rgbToHSV([color[0], color[1], color[2]]),
 			history: [...p.history, p.current],
 		}));
+	}
+
+	/**
+	 * Change the current color
+	 * @param color The color to set.
+	 */
+	useColorHSV(color: HSV) {
+		const rgb = hsvToRGB(color);
+		this.setPalette(p => {
+			const current = rgba(rgb[0], rgb[1], rgb[2], p.current[3]);
+			return {
+				current,
+				hsv: color,
+				history: [...p.history, p.current],
+			};
+		});
 	}
 
 	/** invertTransform */

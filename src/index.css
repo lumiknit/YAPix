@@ -16,10 +16,3 @@
 body {
 	margin: 0;
 }
-
-.w-canvas {
-	position: relative;
-	width: 100dvw;
-	height: 50dvh;
-	border: 1px solid red;
-}
