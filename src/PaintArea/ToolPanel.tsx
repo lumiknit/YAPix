@@ -9,6 +9,22 @@ type Props = {
 const ToolPanel: Component<Props> = props => {
 	return (
 		<div class="p-tool-panel">
+			<div class="p-tool-row p-tr-dev">
+				<ToolButton
+					onClick={() =>
+						props.z.setBrushShape(props.z.brush().size.w - 1, true)
+					}>
+					{" "}
+					Decrease Brush{" "}
+				</ToolButton>
+				<ToolButton
+					onClick={() =>
+						props.z.setBrushShape(props.z.brush().size.w + 1, true)
+					}>
+					{" "}
+					Increase Brush{" "}
+				</ToolButton>
+			</div>
 			<div class="p-tool-row p-tr-util">
 				<ToolButton> Select </ToolButton>
 				<ToolButton> Undo </ToolButton>

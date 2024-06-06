@@ -39,7 +39,7 @@ const Cursor: Component<Props> = props => {
 			<div
 				class="cv-real-cursor"
 				style={{
-					transform: `translate(${rx()}px, ${ry()}px)`,
+					transform: `translate(${rx()}px, ${ry()}px) translate(-50%, -50%)`,
 					"z-index": 2,
 				}}
 			/>

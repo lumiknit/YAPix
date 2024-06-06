@@ -8,6 +8,7 @@ import {
 	drawLineWithCallbacks,
 	ellipsePolygon,
 	Polygon,
+	polygonTo4SegPath2D,
 	polygonToPath2D,
 	rectanglePolygon,
 } from "./polygon";
@@ -210,12 +211,12 @@ export class State {
 
 	/** Get brush cursor position */
 	brushCursorX() {
-		return Math.floor(this.cursor().brush.x - (this.brush().size.w % 2));
+		return Math.floor(this.cursor().brush.x - this.brush().size.w / 2 + 0.5);
 	}
 
 	/** Get brush cursor position */
 	brushCursorY() {
-		return Math.floor(this.cursor().brush.y - (this.brush().size.h % 2));
+		return Math.floor(this.cursor().brush.y - this.brush().size.h / 2 + 0.5);
 	}
 
 	/** Set brush shape.
@@ -241,6 +242,13 @@ export class State {
 	drawFree(lastX: number, lastY: number, x: number, y: number) {
 		const ctx = this.focusedLayerRef?.getContext("2d")!;
 
+		const dx = x - lastX;
+		const dy = y - lastY;
+		console.log("drawFree", lastX, lastY, x, y);
+
+		if (dx * dx + dy * dy < 2) return;
+		this.ptrState!.last = { x, y };
+
 		ctx.fillStyle = rgbaForStyle(this.palette().current);
 		drawLineWithCallbacks(
 			lastX,
@@ -249,12 +257,12 @@ export class State {
 			y,
 			(x, y, l) => {
 				ctx.translate(x, y);
-				ctx.fill(polygonToPath2D(this.brush().shape));
+				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
 				ctx.translate(-x, -y);
 			},
 			(x, y, l) => {
 				ctx.translate(x, y);
-				ctx.fill(polygonToPath2D(this.brush().shape));
+				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
 				ctx.translate(-x, -y);
 			},
 		);
@@ -262,14 +270,18 @@ export class State {
 
 	// -- Events
 
-	pointerDown(x: number, y: number) {
+	pointerDown() {
+		const cb = this.cursor().brush;
+		const x = Math.floor(cb.x);
+		const y = Math.floor(cb.y);
+
 		this.ptrState = {
 			start: { x, y },
 			last: { x, y },
 		};
 	}
 
-	pointerUp(x: number, y: number) {
+	pointerUp() {
 		this.ptrState = undefined;
 	}
 
@@ -281,8 +293,6 @@ export class State {
 		const y = Math.floor(cb.y);
 
 		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, x, y);
-
-		this.ptrState.last = { x, y };
 	}
 
 	// -- Event Loop

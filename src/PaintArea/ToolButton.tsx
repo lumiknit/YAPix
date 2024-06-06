@@ -1,17 +1,11 @@
-import { Component } from "solid-js";
+import { Component, splitProps } from "solid-js";
 import { JSX } from "solid-js/jsx-runtime";
-import toast from "solid-toast";
 
-type Props = {
-	children: JSX.Element | JSX.Element[];
-};
+type Props = {} & JSX.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const ToolButton: Component<Props> = props => {
-	return (
-		<button class="p-tool-btn" onClick={() => toast("COOL")}>
-			{props.children}
-		</button>
-	);
+	const [locals, divProps] = splitProps(props, ["class"]);
+	return <button class={`p-tool-btn ${locals.class}`} {...divProps} />;
 };
 
 export default ToolButton;

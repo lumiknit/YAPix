@@ -57,6 +57,29 @@ export const polygonToPath2D = (p: Polygon): Path2D => {
 };
 
 /**
+ * Convert a polygon into Path2D with 4-segments
+ */
+export const polygonTo4SegPath2D = (
+	p: Polygon,
+	w: number,
+	h: number,
+): Path2D => {
+	const path = new Path2D();
+	const cx = (p.minX + p.maxX) / 2;
+	const cy = (p.minY + p.maxY) / 2;
+	const [x0, y0] = p.points[0];
+	path.moveTo(x0, y0);
+	for (let i = 1; i < p.points.length; i++) {
+		let [x, y] = p.points[i];
+		if (x > cx) x += w;
+		if (y > cy) y += h;
+		path.lineTo(x, y);
+	}
+	path.closePath();
+	return path;
+};
+
+/**
  * Convert a polygon to a svg.
  *
  * @param p The polygon
@@ -105,7 +128,6 @@ export const xsToPolygon = (xs: number[], y0: number): Polygon => {
 	left.push([lastL, y0 + h]);
 	right.push([lastR, y0 + h]);
 	right.reverse();
-	console.log(xs, left, right);
 	return polygon(left.concat(right));
 };
 
@@ -192,32 +214,75 @@ export const drawLineWithCallbacks = (
 		vertical(x0, y, l);
 		return;
 	}
-	if (x0 > x1) {
-		// Swap the points
-		[x0, x1] = [x1, x0];
-		[y0, y1] = [y1, y0];
-	}
 
-	let x = x0,
-		y = y0;
-
-	const w = x1 - x0;
+	const w = Math.abs(x1 - x0);
 	const h = Math.abs(y1 - y0);
-	const sy = y1 > y0 ? 1 : -1;
-	let err = 2 * h - w;
-	const de = 2 * h;
-	const dne = 2 * (h - w);
 
-	let last = x;
-	for (; x <= x1; x++) {
-		if (err < 0) {
-			err += de;
-		} else {
+	if (w >= h) {
+		if (x0 > x1) {
+			// Swap the points
+			[x0, x1] = [x1, x0];
+			[y0, y1] = [y1, y0];
+		}
+
+		let x = x0,
+			y = y0;
+
+		const sy = y1 > y0 ? 1 : -1;
+
+		let err = 2 * h - w;
+		const de = 2 * h;
+		const dne = 2 * (h - w);
+
+		let last = x;
+		for (; x <= x1; x++) {
+			console.log("Int", x, y, err);
+			if (err < 0) {
+				err += de;
+			} else {
+				console.log("h-draw", last, y, x - last + 1);
+				horizontal(last, y, x - last + 1);
+				last = x + 1;
+				err += dne;
+				y += sy;
+			}
+		}
+		if (err < de && x > last) {
+			console.log("h-draw", last, y, x - last);
 			horizontal(last, y, x - last);
-			last = x;
-			err += dne;
-			y += sy;
+		}
+	} else {
+		if (y0 > y1) {
+			// Swap the points
+			[x0, x1] = [x1, x0];
+			[y0, y1] = [y1, y0];
+		}
+
+		let x = x0,
+			y = y0;
+
+		const sx = x1 > x0 ? 1 : -1;
+
+		let err = 2 * w - h;
+		const de = 2 * w;
+		const dne = 2 * (w - h);
+
+		let last = y;
+		for (; y <= y1; y++) {
+			console.log("Int", x, y, err);
+			if (err < 0) {
+				err += de;
+			} else {
+				console.log("v-draw", last, y, y - last + 1);
+				vertical(x, last, y - last + 1);
+				last = y + 1;
+				err += dne;
+				x += sx;
+			}
+		}
+		if (err < de && y > last) {
+			console.log("v-draw", last, y, y - last);
+			vertical(x, last, y - last);
 		}
 	}
-	horizontal(last, y, x - last);
 };

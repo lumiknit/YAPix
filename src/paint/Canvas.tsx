@@ -29,7 +29,7 @@ const Canvas: Component<Props> = props => {
 
 	const handlePointerDown = (e: PointerEvent) => {
 		const [x, y] = getPointerPos(e);
-		props.z.pointerDown(x, y);
+		props.z.pointerDown();
 	};
 
 	const handlePointerMove = (e: PointerEvent) => {
@@ -39,7 +39,7 @@ const Canvas: Component<Props> = props => {
 
 	const handlePointerUp = (e: PointerEvent) => {
 		const [x, y] = getPointerPos(e);
-		props.z.pointerUp(x, y);
+		props.z.pointerUp();
 	};
 
 	return (
