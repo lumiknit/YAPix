@@ -15,38 +15,40 @@ const Canvas: Component<Props> = props => {
 	// Set main loop
 	let mainLoop: number = 0;
 	onMount(() => {
-		mainLoop = setInterval(() => props.z.step(), 16);
+		mainLoop = setInterval(() => props.z.step(), 50);
 	});
 	onCleanup(() => clearTimeout(mainLoop));
 
-	const handlePointerMove = (e: PointerEvent) => {
+	const getPointerPos = (e: PointerEvent) => {
 		const boundRect = rootRef.getBoundingClientRect();
 		const originalX = e.clientX - boundRect.left;
 		const originalY = e.clientY - boundRect.top;
 
-		let [x, y] = props.z.invertTransform(originalX, originalY);
+		return props.z.invertTransform(originalX, originalY);
+	};
+
+	const handlePointerDown = (e: PointerEvent) => {
+		const [x, y] = getPointerPos(e);
+		props.z.pointerDown(x, y);
+	};
+
+	const handlePointerMove = (e: PointerEvent) => {
+		const [x, y] = getPointerPos(e);
 		props.z.updateRealCursor(x, y);
+	};
 
-		x = Math.floor(x);
-		y = Math.floor(y);
-
-		if (e.buttons !== 1) return;
-
-		const ctx = props.z.focusedLayerRef!.getContext("2d");
-		if (!ctx) throw new Error("Failed to get 2d context");
-
-		// Write a pixel
-
-		// Get the bound rect of the canvas
-
-		const color = props.z.palette().current;
-
-		ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`;
-		ctx.fillRect(x, y, 1, 1);
+	const handlePointerUp = (e: PointerEvent) => {
+		const [x, y] = getPointerPos(e);
+		props.z.pointerUp(x, y);
 	};
 
 	return (
-		<div ref={rootRef!} class="cv-root" onPointerMove={handlePointerMove}>
+		<div
+			ref={rootRef!}
+			class="cv-root"
+			onPointerDown={handlePointerDown}
+			onPointerMove={handlePointerMove}
+			onPointerUp={handlePointerUp}>
 			<Cursor z={props.z} />
 			<div
 				class="cv-view"

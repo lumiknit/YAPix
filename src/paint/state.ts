@@ -1,10 +1,16 @@
 import { Accessor, createSignal, Setter } from "solid-js";
 import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
 
-import { rgba, RGBA } from "../common/color";
+import { rgba, RGBA, rgbaForStyle } from "../common/color";
 import { Layer, putLayerToCanvas } from "./layer";
 import { Cursor, Display, ORIGIN, Pos, Size } from "./types";
-import { ellipsePolygon, Polygon, rectanglePolygon } from "./polygon";
+import {
+	drawLineWithCallbacks,
+	ellipsePolygon,
+	Polygon,
+	polygonToPath2D,
+	rectanglePolygon,
+} from "./polygon";
 import { PaintConfig } from "./config";
 
 export type Brush = {
@@ -56,7 +62,7 @@ export class State {
 	/** Pointer down state
 	 * If this value is set, the pointer is down.
 	 */
-	pointerDown?: {
+	ptrState?: {
 		start: Pos;
 		last: Pos;
 	};
@@ -190,12 +196,13 @@ export class State {
 	 * @param dt The time difference in milliseconds.
 	 */
 	updateBrushCursorPos(dt: number) {
+		const r = this.config().brushStabilization ? Math.pow(0.001, dt / 1000) : 1;
 		this.setCursor(c => {
 			return {
 				...c,
 				brush: {
-					x: c.brush.x * 0.9 + c.real.x * 0.1,
-					y: c.brush.y * 0.9 + c.real.y * 0.1,
+					x: c.brush.x * (1 - r) + c.real.x * r,
+					y: c.brush.y * (1 - r) + c.real.y * r,
 				},
 			};
 		});
@@ -229,12 +236,53 @@ export class State {
 		});
 	}
 
-	// -- Draw
+	// -- Canvas Draw
+
+	drawFree(lastX: number, lastY: number, x: number, y: number) {
+		const ctx = this.focusedLayerRef?.getContext("2d")!;
+
+		ctx.fillStyle = rgbaForStyle(this.palette().current);
+		drawLineWithCallbacks(
+			lastX,
+			lastY,
+			x,
+			y,
+			(x, y, l) => {
+				ctx.translate(x, y);
+				ctx.fill(polygonToPath2D(this.brush().shape));
+				ctx.translate(-x, -y);
+			},
+			(x, y, l) => {
+				ctx.translate(x, y);
+				ctx.fill(polygonToPath2D(this.brush().shape));
+				ctx.translate(-x, -y);
+			},
+		);
+	}
+
+	// -- Events
+
+	pointerDown(x: number, y: number) {
+		this.ptrState = {
+			start: { x, y },
+			last: { x, y },
+		};
+	}
+
+	pointerUp(x: number, y: number) {
+		this.ptrState = undefined;
+	}
 
 	drawIfPointerDown() {
-		if (!this.pointerDown) return;
-		const x = this.brushCursorX();
-		const y = this.brushCursorY();
+		if (!this.ptrState) return;
+
+		const cb = this.cursor().brush;
+		const x = Math.floor(cb.x);
+		const y = Math.floor(cb.y);
+
+		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, x, y);
+
+		this.ptrState.last = { x, y };
 	}
 
 	// -- Event Loop
@@ -253,5 +301,6 @@ export class State {
 		this.lastStepMS = now;
 
 		this.updateBrushCursorPos(dt);
+		this.drawIfPointerDown();
 	}
 }

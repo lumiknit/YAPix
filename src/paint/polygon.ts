@@ -198,22 +198,26 @@ export const drawLineWithCallbacks = (
 		[y0, y1] = [y1, y0];
 	}
 
+	let x = x0,
+		y = y0;
+
 	const w = x1 - x0;
 	const h = Math.abs(y1 - y0);
+	const sy = y1 > y0 ? 1 : -1;
 	let err = 2 * h - w;
-	let de = 2 * h;
-	let dne = 2 * (h - w);
+	const de = 2 * h;
+	const dne = 2 * (h - w);
 
-	let x = x0;
-	let y = y0;
-
-	for (let i = 0; i <= w; i++) {
-		horizontal(x + i, y, 1);
+	let last = x;
+	for (; x <= x1; x++) {
 		if (err < 0) {
 			err += de;
 		} else {
+			horizontal(last, y, x - last);
+			last = x;
 			err += dne;
-			y += y1 > y0 ? 1 : -1;
+			y += sy;
 		}
 	}
+	horizontal(last, y, x - last);
 };

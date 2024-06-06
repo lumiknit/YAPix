@@ -11,8 +11,10 @@ import { PaintConfig } from "../paint/config";
 type Props = {};
 
 const EditView: Component<Props> = () => {
-	const config: PaintConfig = {};
-	let state = new PaintState(config, 64, 64);
+	const config: PaintConfig = {
+		brushStabilization: 100,
+	};
+	let state = new PaintState(config, 128, 128);
 	return (
 		<div class="p-edit-view">
 			<PaintArea z={state} />
