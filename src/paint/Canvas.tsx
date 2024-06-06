@@ -1,4 +1,4 @@
-import { Component, onMount } from "solid-js";
+import { Component, onMount, onCleanup } from "solid-js";
 
 import { State } from "./state";
 
@@ -12,9 +12,24 @@ type Props = {
 const Canvas: Component<Props> = props => {
 	let rootRef: HTMLDivElement;
 
-	onMount(() => {});
+	// Set main loop
+	let mainLoop: number = 0;
+	onMount(() => {
+		mainLoop = setInterval(() => props.z.step(), 16);
+	});
+	onCleanup(() => clearTimeout(mainLoop));
 
-	const handleMove = (e: MouseEvent) => {
+	const handlePointerMove = (e: PointerEvent) => {
+		const boundRect = rootRef.getBoundingClientRect();
+		const originalX = e.clientX - boundRect.left;
+		const originalY = e.clientY - boundRect.top;
+
+		let [x, y] = props.z.invertTransform(originalX, originalY);
+		props.z.updateRealCursor(x, y);
+
+		x = Math.floor(x);
+		y = Math.floor(y);
+
 		if (e.buttons !== 1) return;
 
 		const ctx = props.z.focusedLayerRef!.getContext("2d");
@@ -23,23 +38,15 @@ const Canvas: Component<Props> = props => {
 		// Write a pixel
 
 		// Get the bound rect of the canvas
-		const boundRect = rootRef.getBoundingClientRect();
-		const originalX = e.clientX - boundRect.left;
-		const originalY = e.clientY - boundRect.top;
 
-		let [x, y] = props.z.invertTransform(originalX, originalY);
-		x = Math.floor(x);
-		y = Math.floor(y);
 		const color = props.z.palette().current;
 
 		ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`;
 		ctx.fillRect(x, y, 1, 1);
-
-		props.z.setCursor({ x: x, y: y });
 	};
 
 	return (
-		<div ref={rootRef!} class="cv-root" onMouseMove={handleMove}>
+		<div ref={rootRef!} class="cv-root" onPointerMove={handlePointerMove}>
 			<Cursor z={props.z} />
 			<div
 				class="cv-view"
@@ -50,22 +57,22 @@ const Canvas: Component<Props> = props => {
 					ref={props.z.focusedLayerRef}
 					class="cv-pix"
 					style={{ "z-index": 1, top: 0, left: 0 }}
-					width={props.z.width}
-					height={props.z.height}
+					width={props.z.size.w}
+					height={props.z.size.h}
 				/>
 				<canvas
 					ref={props.z.belowLayerRef}
 					class="cv-pix"
 					style={{ "z-index": 0.5, top: 0, left: 0 }}
-					width={props.z.width}
-					height={props.z.height}
+					width={props.z.size.w}
+					height={props.z.size.h}
 				/>
 				<canvas
 					ref={props.z.aboveLayerRef}
 					class="cv-pix"
 					style={{ "z-index": 1.5, top: 0, left: 0 }}
-					width={props.z.width}
-					height={props.z.height}
+					width={props.z.size.w}
+					height={props.z.size.h}
 				/>
 			</div>
 		</div>

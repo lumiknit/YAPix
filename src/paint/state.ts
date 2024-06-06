@@ -3,7 +3,17 @@ import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
 
 import { rgba, RGBA } from "../common/color";
 import { Layer, putLayerToCanvas } from "./layer";
-import { Display, ORIGIN, Pos } from "./types";
+import { Cursor, Display, ORIGIN, Pos, Size } from "./types";
+import { ellipsePolygon, Polygon, rectanglePolygon } from "./polygon";
+import { PaintConfig } from "./config";
+
+export type Brush = {
+	/** Brush shape */
+	shape: Polygon;
+
+	/** Size */
+	size: Size;
+};
 
 export type Palette = {
 	/** Current color */
@@ -17,18 +27,19 @@ export type Palette = {
 };
 
 export class State {
-	// Meta Data
+	// -- Config
+	config: Accessor<PaintConfig>;
+	setConfig: Setter<PaintConfig>;
 
-	/** Image width */
-	width: number;
+	// -- Meta Data
 
-	/** Image height */
-	height: number;
+	/** Image size */
+	size: Size;
 
 	/** Layers. 0 is bottom. */
 	layers: Layer[];
 
-	// Editing state
+	// -- Editing state
 
 	/** Display state */
 	display: Accessor<Display>;
@@ -37,10 +48,18 @@ export class State {
 	setDisplay: Setter<Display>;
 
 	/** Cursor */
-	cursor: Accessor<Pos>;
+	cursor: Accessor<Cursor>;
 
 	/** Cursor setter */
-	setCursor: Setter<Pos>;
+	setCursor: Setter<Cursor>;
+
+	/** Pointer down state
+	 * If this value is set, the pointer is down.
+	 */
+	pointerDown?: {
+		start: Pos;
+		last: Pos;
+	};
 
 	/** Selected layer */
 	focusedLayer: number;
@@ -50,6 +69,12 @@ export class State {
 
 	/** Color setter */
 	setPalette: Setter<Palette>;
+
+	/** Current brush shape */
+	brush: Accessor<Brush>;
+
+	/** Current brush shape setter */
+	setBrush: Setter<Brush>;
 
 	// Canvas Refs
 
@@ -62,18 +87,15 @@ export class State {
 	/** Below layer canvas ref */
 	belowLayerRef?: HTMLCanvasElement;
 
-	constructor(width: number, height: number) {
-		this.width = width;
-		this.height = height;
+	// -- Methods
+
+	constructor(config: PaintConfig, w: number, h: number) {
+		[this.config, this.setConfig] = createSignal(config);
+
+		this.size = { w, h };
 		this.layers = [];
 
 		this.focusedLayer = 0;
-
-		[this.palette, this.setPalette] = createSignal({
-			current: rgba(255, 255, 255, 255),
-			hsv: [0, 0, 1],
-			history: [] as RGBA[],
-		});
 
 		[this.display, this.setDisplay] = createSignal({
 			x: 0,
@@ -81,7 +103,19 @@ export class State {
 			zoom: 8,
 		});
 
-		[this.cursor, this.setCursor] = createSignal({ ...ORIGIN });
+		[this.cursor, this.setCursor] = createSignal({
+			real: ORIGIN,
+			brush: ORIGIN,
+		});
+
+		[this.palette, this.setPalette] = createSignal({
+			current: rgba(255, 255, 255, 255),
+			hsv: [0, 0, 1],
+			history: [] as RGBA[],
+		});
+
+		[this.brush, this.setBrush] = createSignal({} as any);
+		this.setBrushShape(3, true);
 	}
 
 	render(canvas: HTMLCanvasElement) {
@@ -107,7 +141,7 @@ export class State {
 		const layer = this.layers[this.focusedLayer];
 		if (!layer) return;
 
-		const data = ctx.getImageData(0, 0, this.width, this.height);
+		const data = ctx.getImageData(0, 0, this.size.w, this.size.h);
 		layer.data = data;
 	}
 
@@ -143,5 +177,81 @@ export class State {
 	invertTransform(x: number, y: number): [number, number] {
 		const d = this.display();
 		return [(x - d.x) / d.zoom, (y - d.y) / d.zoom];
+	}
+
+	// --- Cursor Methods
+
+	/** Update real cursor position. */
+	updateRealCursor(x: number, y: number) {
+		this.setCursor(c => ({ ...c, real: { x, y } }));
+	}
+
+	/** Update brush cursor position
+	 * @param dt The time difference in milliseconds.
+	 */
+	updateBrushCursorPos(dt: number) {
+		this.setCursor(c => {
+			return {
+				...c,
+				brush: {
+					x: c.brush.x * 0.9 + c.real.x * 0.1,
+					y: c.brush.y * 0.9 + c.real.y * 0.1,
+				},
+			};
+		});
+	}
+
+	/** Get brush cursor position */
+	brushCursorX() {
+		return Math.floor(this.cursor().brush.x - (this.brush().size.w % 2));
+	}
+
+	/** Get brush cursor position */
+	brushCursorY() {
+		return Math.floor(this.cursor().brush.y - (this.brush().size.h % 2));
+	}
+
+	/** Set brush shape.
+	 * @param size The width/height of the brush shape.
+	 * @param round If true, the brush shape is a circle. Otherwise, it is a square.
+	 */
+	setBrushShape(size: number, round: boolean) {
+		const off = Math.floor(size / 2);
+		const shape = round
+			? ellipsePolygon(-off, -off, size, size)
+			: rectanglePolygon(-off, -off, size, size);
+		this.setBrush({
+			shape,
+			size: {
+				w: size,
+				h: size,
+			},
+		});
+	}
+
+	// -- Draw
+
+	drawIfPointerDown() {
+		if (!this.pointerDown) return;
+		const x = this.brushCursorX();
+		const y = this.brushCursorY();
+	}
+
+	// -- Event Loop
+
+	/**
+	 * Last step executed timestamp in milliseconds.
+	 */
+	private lastStepMS = Date.now();
+
+	/**
+	 * Handle everything for the next frame.
+	 */
+	step() {
+		const now = Date.now();
+		const dt = now - this.lastStepMS;
+		this.lastStepMS = now;
+
+		this.updateBrushCursorPos(dt);
 	}
 }

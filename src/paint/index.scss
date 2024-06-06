@@ -2,6 +2,8 @@
 	position: absolute;
 	overflow: hidden;
 	inset: 0;
+
+	cursor: none;
 }
 
 .cv-root > *,
@@ -19,6 +21,16 @@
 	display: block;
 }
 
+.cv-real-cursor {
+	position: absolute;
+	width: 2px;
+	height: 2px;
+	background: white;
+	border: 1px solid black;
+}
+
 .cv-cursor {
 	line-height: 0;
+	stroke: 1px solid red;
+	fill: none;
 }

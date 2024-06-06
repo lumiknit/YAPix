@@ -1,5 +1,5 @@
 import { Component } from "solid-js";
-import toast, { Toaster } from "solid-toast";
+import { Toaster } from "solid-toast";
 
 import { modal } from "@lumiknit/solid-fekit";
 
