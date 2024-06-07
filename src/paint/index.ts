@@ -3,10 +3,10 @@
  * @description A module for managing a painting status
  */
 
-export * from "./utils";
-export * from "./types";
+export * from "./config";
 export * from "./layer";
-
-export { State as PaintState } from "./state";
+export * from "./state";
+export * from "./types";
+export * from "./utils";
 
 export { default as Canvas } from "./Canvas";

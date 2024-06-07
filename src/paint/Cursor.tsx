@@ -1,12 +1,16 @@
 import { Component } from "solid-js";
-import { State } from "./state";
-import { ellipsePolygon, polygonToSVG } from "./polygon";
+import { PaintState } from "./state";
+import { polygonToSVG } from "./polygon";
 
 type Props = {
-	z: State;
+	z: PaintState;
 };
 
 const Cursor: Component<Props> = props => {
+	const strokeWidth = () => {
+		const d = props.z.display();
+		return d.zoom > 4 ? 2 : 1;
+	};
 	const rx = () => {
 		const d = props.z.display();
 		return Math.floor(d.x + d.zoom * props.z.cursor().real.x);
@@ -56,7 +60,7 @@ const Cursor: Component<Props> = props => {
 					style={{
 						transform: `translate(-1px, -1px)`,
 						stroke: "green",
-						"stroke-width": `${2 * iz()}px`,
+						"stroke-width": `${strokeWidth() * iz()}px`,
 						fill: "none",
 					}}>
 					<polygon points={polygonToSVG(props.z.brush().shape)} />

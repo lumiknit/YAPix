@@ -16,6 +16,14 @@
 }
 
 /* Tool Panel */
+.p-tool-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
 button.p-tool-btn {
 	background: #888;
 	border: outset 0.25rem #aaa;
@@ -41,4 +49,16 @@ button.p-tool-btn {
 		background: #666;
 		color: #ccc;
 	}
+}
+
+button.p-dot-btn {
+	width: 90%;
+	padding: 1rem 1.5rem;
+}
+
+.p-tool-color-preview {
+	border: 1px solid #000;
+	border-radius: 50%;
+	width: 1em;
+	height: 1em;
 }

@@ -1,7 +1,7 @@
-@import url("./static/font-galmuri/galmuri.css");
+/* @import url("./static/font-galmuri/galmuri.css"); */
 
 * {
-	font-family: Galmuri11, sans-serif;
+	font-family: sans-serif;
 }
 
 :root {

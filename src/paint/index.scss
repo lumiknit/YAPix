@@ -4,6 +4,13 @@
 	inset: 0;
 
 	cursor: none;
+
+	touch-action: none;
+
+	user-select: none;
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
 }
 
 .cv-root > *,
@@ -14,19 +21,21 @@
 }
 
 .cv-pix {
+	image-rendering: -webkit-optimize-contrast;
 	image-rendering: pixelated;
-
-	outline: 1px solid #0f0;
+	image-rendering: crisp-edges;
 
 	display: block;
 }
 
 .cv-real-cursor {
 	position: absolute;
-	width: 2px;
-	height: 2px;
-	background: white;
-	border: 1px solid black;
+	width: 1px;
+	height: 1px;
+	background: none;
+	border: 1px solid white;
+	outline: 1px solid black;
+	border-radius: 50%;
 }
 
 .cv-cursor {

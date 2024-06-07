@@ -35,8 +35,29 @@ export const mountEvents = (
 		z.pointerUp();
 	};
 
+	eventHandlers.pointerleave = (e: PointerEvent) => {
+		z.pointerUp();
+	};
+
+	// Wheel
+	eventHandlers.wheel = (e: WheelEvent) => {
+		if (e.ctrlKey || e.metaKey) {
+			z.setDisplay(d => ({
+				...d,
+				zoom: z.display().zoom * (1 - e.deltaY / 100),
+			}));
+		} else {
+			z.setDisplay(d => ({
+				...d,
+				x: d.x - e.deltaX,
+				y: d.y - e.deltaY,
+			}));
+		}
+		e.preventDefault();
+	};
+
 	for (const [key, handler] of Object.entries(eventHandlers)) {
-		target.addEventListener(key as any, handler as any);
+		target.addEventListener(key, handler as any);
 	}
 
 	return {

@@ -9,6 +9,7 @@ import {
 	ellipsePolygon,
 	Polygon,
 	polygonTo4SegPath2D,
+	polygonToPath2D,
 	rectanglePolygon,
 } from "./polygon";
 import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
@@ -34,7 +35,7 @@ export type Palette = {
 	history: RGBA[];
 };
 
-export class State {
+export class PaintState {
 	// -- Config
 	originalConfig: PaintConfig;
 	config: Accessor<CompiledPaintConfig>;
@@ -252,22 +253,34 @@ export class State {
 
 	// -- Canvas Draw
 
+	drawSingleBrush(x: number, y: number) {
+		const ctx = this.focusedLayerRef?.getContext("2d")!;
+
+		ctx.fillStyle = rgbaForStyle(this.palette().current);
+		ctx.translate(x, y);
+		ctx.fill(polygonToPath2D(this.brush().shape));
+		ctx.translate(-x, -y);
+	}
+
 	drawFree(lastX: number, lastY: number, x: number, y: number) {
 		const ctx = this.focusedLayerRef?.getContext("2d")!;
 
-		const dx = x - lastX;
-		const dy = y - lastY;
+		const dx = x - lastX - 0.5;
+		const dy = y - lastY - 0.5;
 		console.log("drawFree", lastX, lastY, x, y);
 
-		if (dx * dx + dy * dy < 2) return;
-		this.ptrState!.last = { x, y };
+		if (dx * dx + dy * dy < 1.4) return;
+		this.ptrState!.last = {
+			x: Math.floor(x),
+			y: Math.floor(y),
+		};
 
 		ctx.fillStyle = rgbaForStyle(this.palette().current);
 		drawLineWithCallbacks(
 			lastX,
 			lastY,
-			x,
-			y,
+			Math.floor(x),
+			Math.floor(y),
 			(x, y, l) => {
 				ctx.translate(x, y);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
@@ -285,13 +298,15 @@ export class State {
 
 	pointerDown() {
 		const cb = this.cursor().brush;
-		const x = Math.floor(cb.x);
-		const y = Math.floor(cb.y);
+		const x = cb.x,
+			y = cb.y;
 
 		this.ptrState = {
 			start: { x, y },
-			last: { x, y },
+			last: { x: Math.floor(x), y: Math.floor(y) },
 		};
+
+		this.drawSingleBrush(Math.floor(x), Math.floor(y));
 	}
 
 	pointerUp() {
@@ -302,10 +317,8 @@ export class State {
 		if (!this.ptrState) return;
 
 		const cb = this.cursor().brush;
-		const x = Math.floor(cb.x);
-		const y = Math.floor(cb.y);
 
-		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, x, y);
+		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, cb.x, cb.y);
 	}
 
 	// -- Main action handler
