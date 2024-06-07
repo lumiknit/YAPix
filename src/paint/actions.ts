@@ -68,6 +68,4 @@ export type Action =
 	| UpdateImgAction
 	| NewLayerAction
 	| UpdateLayerInfoAction
-	| DeleteLayerAction
-	| CreateTempLayerAction
-	| DeleteTempLayerAction;
+	| DeleteLayerAction;

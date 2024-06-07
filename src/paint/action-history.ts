@@ -17,8 +17,8 @@ export class HistoryManager<A> {
 
 	constructor(
 		maxHistory: number,
-		revert: (action: Action) => void | A,
-		exec: (action: Action) => void,
+		revert: (action: A) => void | A,
+		exec: (action: A) => void,
 	) {
 		this.maxHistory = maxHistory;
 		this.onRevert = revert;

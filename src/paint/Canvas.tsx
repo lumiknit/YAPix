@@ -4,6 +4,7 @@ import { State } from "./state";
 
 import "./index.scss";
 import Cursor from "./Cursor";
+import { EventBindInfo, mountEvents, unmountEvents } from "./event-handler";
 
 type Props = {
 	z: State;
@@ -13,45 +14,22 @@ const Canvas: Component<Props> = props => {
 	let rootRef: HTMLDivElement;
 
 	// Set main loop
+	let ebi: EventBindInfo | undefined;
 	let mainLoop: number = 0;
 	onMount(() => {
+		ebi = mountEvents(props.z, rootRef);
 		mainLoop = setInterval(
 			() => props.z.step(),
 			1000 / (props.z.config().fps || 60),
 		);
 	});
-	onCleanup(() => clearTimeout(mainLoop));
-
-	const getPointerPos = (e: PointerEvent) => {
-		const boundRect = rootRef.getBoundingClientRect();
-		const originalX = e.clientX - boundRect.left;
-		const originalY = e.clientY - boundRect.top;
-
-		return props.z.invertTransform(originalX, originalY);
-	};
-
-	const handlePointerDown = (e: PointerEvent) => {
-		const [x, y] = getPointerPos(e);
-		props.z.pointerDown();
-	};
-
-	const handlePointerMove = (e: PointerEvent) => {
-		const [x, y] = getPointerPos(e);
-		props.z.updateRealCursor(x, y);
-	};
-
-	const handlePointerUp = (e: PointerEvent) => {
-		const [x, y] = getPointerPos(e);
-		props.z.pointerUp();
-	};
+	onCleanup(() => {
+		unmountEvents(ebi!);
+		clearTimeout(mainLoop);
+	});
 
 	return (
-		<div
-			ref={rootRef!}
-			class="cv-root"
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}>
+		<div ref={rootRef!} class="cv-root">
 			<Cursor z={props.z} />
 			<div
 				class="cv-view"
