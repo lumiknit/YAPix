@@ -15,7 +15,10 @@ const Canvas: Component<Props> = props => {
 	// Set main loop
 	let mainLoop: number = 0;
 	onMount(() => {
-		mainLoop = setInterval(() => props.z.step(), 50);
+		mainLoop = setInterval(
+			() => props.z.step(),
+			1000 / (props.z.config().fps || 60),
+		);
 	});
 	onCleanup(() => clearTimeout(mainLoop));
 

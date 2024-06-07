@@ -1,31 +1,44 @@
+import { Pos, Rect, ORIGIN } from ".";
 import { emptyCtx } from "./utils";
 
-export type Layer = {
+/** Layer data except image data */
+export type LayerData = {
 	/** Name of the layer */
 	name: string;
 
-	/** Layer x position */
-	x: number;
-	/** Layer y position */
-	y: number;
+	/** Layer x/y offset */
+	off: Pos;
 
+	/** Opacity */
+	opacity: number;
+};
+
+export type Layer = LayerData & {
 	/** Image data */
 	data: ImageData;
 };
 
-export const createEmptyLayer = (
-	name: string,
-	width: number,
-	height: number,
-): Layer => {
+export const extractLayerData = (layer: Layer): LayerData => {
+	const l: LayerData = { ...layer };
+	delete (l as any).data;
+	return l;
+};
+
+/**
+ * Create an empty layer.
+ */
+export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
 	return {
 		name,
-		x: 0,
-		y: 0,
-		data: new ImageData(width, height),
+		off: { ...ORIGIN },
+		opacity: 1,
+		data: new ImageData(w, h),
 	};
 };
 
+/**
+ *
+ */
 export const cloneLayer = (layer: Layer): Layer => {
 	return {
 		...layer,
@@ -54,9 +67,11 @@ export const resizeLayer = (
 	ctx.putImageData(layer.data, dx, dy);
 	const newImageData = ctx.getImageData(dx, dy, width, height);
 	return {
-		name: layer.name,
-		x: layer.x + dx,
-		y: layer.y + dy,
+		...layer,
+		off: {
+			x: layer.off.x + dx,
+			y: layer.off.y + dy,
+		},
 		data: newImageData,
 	};
 };
@@ -65,7 +80,7 @@ export const putLayerToCanvas = (
 	ctx: CanvasRenderingContext2D,
 	layer: Layer,
 ) => {
-	ctx.putImageData(layer.data, layer.x, layer.y);
+	ctx.putImageData(layer.data, layer.off.x, layer.off.y);
 };
 
 export const canvasToLayer = (
@@ -76,8 +91,8 @@ export const canvasToLayer = (
 	if (!ctx) throw new Error("Failed to get 2d context");
 	return {
 		name,
-		x: 0,
-		y: 0,
+		off: { ...ORIGIN },
+		opacity: 1,
 		data: ctx.getImageData(0, 0, canvas.width, canvas.height),
 	};
 };

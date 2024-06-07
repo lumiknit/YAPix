@@ -205,84 +205,45 @@ export const drawLineWithCallbacks = (
 	x1: number,
 	y1: number,
 	horizontal: (x: number, y: number, l: number) => void,
-	vertical: (x: number, y: number, l: number) => void,
+	vertical: (y: number, x: number, l: number) => void,
 ) => {
-	if (x0 == x1) {
-		// Just draw a vertical line
-		const y = Math.min(y0, y1);
-		const l = Math.abs(y1 - y0) + 1;
-		vertical(x0, y, l);
-		return;
+	let f = horizontal;
+	if (Math.abs(y1 - y0) > Math.abs(x1 - x0)) {
+		// Swap
+		[x0, y0, x1, y1] = [y0, x0, y1, x1];
+		f = vertical;
 	}
 
 	const w = Math.abs(x1 - x0);
 	const h = Math.abs(y1 - y0);
 
-	if (w >= h) {
-		if (x0 > x1) {
-			// Swap the points
-			[x0, x1] = [x1, x0];
-			[y0, y1] = [y1, y0];
+	if (x0 > x1) {
+		// Swap the points
+		[x0, x1] = [x1, x0];
+		[y0, y1] = [y1, y0];
+	}
+
+	let x = x0,
+		y = y0;
+
+	const sy = y1 > y0 ? 1 : -1;
+
+	let err = 2 * h - w;
+	const de = 2 * h;
+	const dne = 2 * (h - w);
+
+	let last = x;
+	for (; x <= x1; x++) {
+		if (err < 0) {
+			err += de;
+		} else {
+			f(last, y, x - last + 1);
+			last = x + 1;
+			err += dne;
+			y += sy;
 		}
-
-		let x = x0,
-			y = y0;
-
-		const sy = y1 > y0 ? 1 : -1;
-
-		let err = 2 * h - w;
-		const de = 2 * h;
-		const dne = 2 * (h - w);
-
-		let last = x;
-		for (; x <= x1; x++) {
-			console.log("Int", x, y, err);
-			if (err < 0) {
-				err += de;
-			} else {
-				console.log("h-draw", last, y, x - last + 1);
-				horizontal(last, y, x - last + 1);
-				last = x + 1;
-				err += dne;
-				y += sy;
-			}
-		}
-		if (err < de && x > last) {
-			console.log("h-draw", last, y, x - last);
-			horizontal(last, y, x - last);
-		}
-	} else {
-		if (y0 > y1) {
-			// Swap the points
-			[x0, x1] = [x1, x0];
-			[y0, y1] = [y1, y0];
-		}
-
-		let x = x0,
-			y = y0;
-
-		const sx = x1 > x0 ? 1 : -1;
-
-		let err = 2 * w - h;
-		const de = 2 * w;
-		const dne = 2 * (w - h);
-
-		let last = y;
-		for (; y <= y1; y++) {
-			console.log("Int", x, y, err);
-			if (err < 0) {
-				err += de;
-			} else {
-				console.log("v-draw", last, y, y - last + 1);
-				vertical(x, last, y - last + 1);
-				last = y + 1;
-				err += dne;
-				x += sx;
-			}
-		}
-		if (err < de && y > last) {
-			console.log("v-draw", last, y, y - last);
-			vertical(x, last, y - last);
-		}
+	}
+	if (err < de && x > last) {
+		f(last, y, x - last);
 	}
 };

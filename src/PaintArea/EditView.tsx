@@ -12,7 +12,7 @@ type Props = {};
 
 const EditView: Component<Props> = () => {
 	const config: PaintConfig = {
-		brushStabilization: 100,
+		brushStabilization: 10,
 	};
 	let state = new PaintState(config, 128, 128);
 	return (

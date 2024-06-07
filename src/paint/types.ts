@@ -1,17 +1,22 @@
+/** 2D position */
 export type Pos = {
 	x: number;
 	y: number;
 };
 
-export const ORIGIN = { x: 0, y: 0 };
+/** Origin Pos. DO NOT USE IT DIRECTLY. instead, used {...ORIGIN} */
+export const ORIGIN: Pos = { x: 0, y: 0 };
 
+/** 2D Size */
 export type Size = {
 	w: number;
 	h: number;
 };
 
+/** 2D Rect */
 export type Rect = Pos & Size;
 
+/** Display */
 export type Display = Pos & {
 	zoom: number;
 };

@@ -9,10 +9,11 @@ import {
 	ellipsePolygon,
 	Polygon,
 	polygonTo4SegPath2D,
-	polygonToPath2D,
 	rectanglePolygon,
 } from "./polygon";
-import { PaintConfig } from "./config";
+import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
+import { HistoryManager } from "./action-history";
+import { Action } from "./actions";
 
 export type Brush = {
 	/** Brush shape */
@@ -35,8 +36,9 @@ export type Palette = {
 
 export class State {
 	// -- Config
-	config: Accessor<PaintConfig>;
-	setConfig: Setter<PaintConfig>;
+	originalConfig: PaintConfig;
+	config: Accessor<CompiledPaintConfig>;
+	setConfig: Setter<CompiledPaintConfig>;
 
 	// -- Meta Data
 
@@ -47,6 +49,9 @@ export class State {
 	layers: Layer[];
 
 	// -- Editing state
+
+	/** History Manager */
+	history: HistoryManager<Action>;
 
 	/** Display state */
 	display: Accessor<Display>;
@@ -97,10 +102,17 @@ export class State {
 	// -- Methods
 
 	constructor(config: PaintConfig, w: number, h: number) {
-		[this.config, this.setConfig] = createSignal(config);
+		this.originalConfig = config;
+		[this.config, this.setConfig] = createSignal(compilePaintConfig(config));
 
 		this.size = { w, h };
 		this.layers = [];
+
+		this.history = new HistoryManager<Action>(
+			this.config().maxHistory,
+			this.exec,
+			this.revert,
+		);
 
 		this.focusedLayer = 0;
 
@@ -197,7 +209,8 @@ export class State {
 	 * @param dt The time difference in milliseconds.
 	 */
 	updateBrushCursorPos(dt: number) {
-		const r = this.config().brushStabilization ? Math.pow(0.001, dt / 1000) : 1;
+		const cfg = this.config();
+		const r = Math.pow(cfg.brushStabFactor, dt / 1000);
 		this.setCursor(c => {
 			return {
 				...c,
@@ -260,7 +273,7 @@ export class State {
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
 				ctx.translate(-x, -y);
 			},
-			(x, y, l) => {
+			(y, x, l) => {
 				ctx.translate(x, y);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
 				ctx.translate(-x, -y);
@@ -294,6 +307,12 @@ export class State {
 
 		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, x, y);
 	}
+
+	// -- Main action handler
+
+	exec(a: Action): void | Action {}
+
+	revert(a: Action) {}
 
 	// -- Event Loop
 
