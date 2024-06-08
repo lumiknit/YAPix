@@ -4,6 +4,9 @@ export class HistoryManager<A> {
 	/** Maximum size of history. */
 	maxHistory: number;
 
+	/** History will be clean when it's size is over maxHistory + cleanThreshold. */
+	cleanThreshold: number = 8;
+
 	/** History */
 	history: A[][] = [];
 
@@ -25,16 +28,34 @@ export class HistoryManager<A> {
 		this.onExec = exec;
 	}
 
+	/**
+	 * Just push an action. The invoker should already apply the action.
+	 */
+	push(actions: A[]) {
+		this.history.push(actions);
+		if (this.history.length > this.maxHistory + this.cleanThreshold) {
+			this.history.splice(0, this.history.length - this.maxHistory);
+		}
+		this.futures = [];
+	}
+
+	/**
+	 * Execute the actions and push them to the history.
+	 */
 	exec(actions: A[]) {
 		const converted = [];
 		for (const a of actions) {
 			const r = this.onExec(a);
 			converted.push(r || a);
 		}
+		this.push(converted);
 		this.history.push(converted);
 		this.futures = [];
 	}
 
+	/**
+	 * Undo the last action.
+	 */
 	undo(): boolean {
 		const actions = this.history.pop();
 		if (!actions) return false;
@@ -48,6 +69,9 @@ export class HistoryManager<A> {
 		return true;
 	}
 
+	/**
+	 * Redo the last action.
+	 */
 	redo(): boolean {
 		const actions = this.futures.pop();
 		if (!actions) return false;

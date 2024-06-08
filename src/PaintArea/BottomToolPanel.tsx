@@ -46,10 +46,10 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton>
 					<TbSelectAll />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => props.z.undo()}>
 					<TbArrowBackUp />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => props.z.redo()}>
 					<TbArrowForwardUp />
 				</ToolButton>
 				<ToolButton>

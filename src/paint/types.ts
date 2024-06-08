@@ -24,6 +24,39 @@ export type Boundary = {
 	b: number;
 };
 
+/** Empty boundary. DO NOT USE IT DIRECTLY. instead, used {...EMPTY_BOUNDARY} */
+export const EMPTY_BOUNDARY = {
+	l: Infinity,
+	r: -Infinity,
+	t: Infinity,
+	b: -Infinity,
+};
+
+/**
+ * Extend the boundary to include the rect (x - r, y - r) - (x + r, y + r)
+ */
+export const extendBoundaryByRadius = (
+	b: Boundary,
+	x: number,
+	y: number,
+	r: number,
+): Boundary => ({
+	l: Math.min(b.l, x - r),
+	r: Math.max(b.r, x + r),
+	t: Math.min(b.t, y - r),
+	b: Math.max(b.b, y + r),
+});
+
+/**
+ * Extend the boundary to include the rect (x, y) - (x + w, y + h)
+ */
+export const extendBoundaryByRect = (b: Boundary, rect: Rect): Boundary => ({
+	l: Math.min(b.l, rect.x),
+	r: Math.max(b.r, rect.x + rect.w),
+	t: Math.min(b.t, rect.y),
+	b: Math.max(b.b, rect.y + rect.h),
+});
+
 export const rectToBoundary = (rect: Rect): Boundary => ({
 	l: rect.x,
 	r: rect.x + rect.w,

@@ -2,8 +2,18 @@ import { Accessor, createSignal, Setter } from "solid-js";
 import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
 
 import { rgba, RGBA, rgbaForStyle } from "../common/color";
-import { Layer, putLayerToCanvas } from "./layer";
-import { Cursor, Display, ORIGIN, Pos, Size } from "./types";
+import { Layer } from "./layer";
+import {
+	Boundary,
+	boundaryToRect,
+	Cursor,
+	Display,
+	EMPTY_BOUNDARY,
+	extendBoundaryByRect,
+	ORIGIN,
+	Pos,
+	Size,
+} from "./types";
 import {
 	drawLineWithCallbacks,
 	ellipsePolygon,
@@ -14,7 +24,8 @@ import {
 } from "./polygon";
 import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
 import { HistoryManager } from "./action-history";
-import { Action } from "./actions";
+import { Action, PutImageAction, UpdateImgAction } from "./actions";
+import toast from "solid-toast";
 
 export type Brush = {
 	/** Brush shape */
@@ -104,6 +115,20 @@ export class PaintState {
 	/** Below layer canvas ref */
 	belowLayerRef?: HTMLCanvasElement;
 
+	/** Temp (painting) layer canvas ref */
+	tempLayerRef?: HTMLCanvasElement;
+
+	// Ref options
+
+	/** Show main layer.
+	 * Sometimes, (e.g. with eraser tool) the original main layer should be hidden.
+	 */
+	showFocusedLayer: Accessor<boolean>;
+	setShowFocusedLayer: Setter<boolean>;
+
+	/** Boundary */
+	tempBd: Boundary;
+
 	// -- Methods
 
 	constructor(config: PaintConfig, w: number, h: number) {
@@ -117,8 +142,8 @@ export class PaintState {
 
 		this.history = new HistoryManager<Action>(
 			this.config().maxHistory,
-			this.exec,
-			this.revert,
+			this.revert.bind(this),
+			this.exec.bind(this),
 		);
 
 		this.focusedLayer = 0;
@@ -142,33 +167,10 @@ export class PaintState {
 
 		[this.brush, this.setBrush] = createSignal({} as any);
 		this.setBrushShape(3, true);
-	}
 
-	render(canvas: HTMLCanvasElement) {
-		const ctx = canvas.getContext("2d");
-		if (!ctx) throw new Error("Failed to get 2d context");
+		[this.showFocusedLayer, this.setShowFocusedLayer] = createSignal(true);
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		for (const layer of this.layers) {
-			putLayerToCanvas(ctx, layer);
-		}
-	}
-
-	/**
-	 * Extract image data from the focused layer, and set it to the focused layer canvas.
-	 * Since focused layer's image data may be different from the one in layers,
-	 * you must back up the focused layer's image data before use some other operations.
-	 */
-	updateFocusedLayer() {
-		if (!this.focusedLayerRef) return;
-		const ctx = this.focusedLayerRef.getContext("2d");
-		if (!ctx) throw new Error("Failed to get 2d context");
-
-		const layer = this.layers[this.focusedLayer];
-		if (!layer) return;
-
-		const data = ctx.getImageData(0, 0, this.size.w, this.size.h);
-		layer.data = data;
+		this.tempBd = { ...EMPTY_BOUNDARY };
 	}
 
 	/**
@@ -259,8 +261,21 @@ export class PaintState {
 
 	// -- Canvas Draw
 
+	getTempCtx(): CanvasRenderingContext2D {
+		const ref = this.tempLayerRef;
+		if (!ref) throw new Error("Temp layer ref is not set.");
+		return ref.getContext("2d")!;
+	}
+
+	getFocusedCtx(): CanvasRenderingContext2D {
+		const ref = this.focusedLayerRef;
+		if (!ref) throw new Error("Temp layer ref is not set.");
+		return ref.getContext("2d")!;
+	}
+
 	drawSingleBrush(x: number, y: number) {
-		const ctx = this.focusedLayerRef?.getContext("2d")!;
+		const ctx = this.getTempCtx();
+		console.log(ctx);
 
 		ctx.fillStyle = rgbaForStyle(this.palette().current);
 		ctx.translate(x, y);
@@ -269,7 +284,7 @@ export class PaintState {
 	}
 
 	drawFree(lastX: number, lastY: number, x: number, y: number) {
-		const ctx = this.focusedLayerRef?.getContext("2d")!;
+		const ctx = this.getTempCtx();
 
 		const dx = x - lastX - 0.5;
 		const dy = y - lastY - 0.5;
@@ -279,6 +294,10 @@ export class PaintState {
 			x: Math.floor(x),
 			y: Math.floor(y),
 		};
+
+		const brush = this.brush();
+		const shape = brush.shape;
+		const brushRect = boundaryToRect(shape.bd);
 
 		ctx.fillStyle = rgbaForStyle(this.palette().current);
 		drawLineWithCallbacks(
@@ -290,13 +309,66 @@ export class PaintState {
 				ctx.translate(x, y);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
 				ctx.translate(-x, -y);
+				this.tempBd = extendBoundaryByRect(this.tempBd, {
+					x: x + brushRect.x,
+					y: y + brushRect.y,
+					w: l - 1 + brushRect.w,
+					h: brushRect.h,
+				});
 			},
 			(y, x, l) => {
 				ctx.translate(x, y);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
 				ctx.translate(-x, -y);
+				this.tempBd = extendBoundaryByRect(this.tempBd, {
+					x: x + brushRect.x,
+					y: y + brushRect.y,
+					w: brushRect.w,
+					h: l - 1 + brushRect.h,
+				});
 			},
 		);
+	}
+
+	/** Copy the result of temp layer into the current focused layer */
+	flushTempLayer() {
+		// If nothing is drawn, do nothing
+		if (this.tempBd.l === Infinity) return;
+
+		const tempCtx = this.getTempCtx();
+		const focusedCtx = this.focusedLayerRef?.getContext("2d")!;
+		// Extract the boundary
+		const rect = boundaryToRect(this.tempBd);
+		const oldImg = focusedCtx.getImageData(rect.x, rect.y, rect.w, rect.h);
+
+		focusedCtx.drawImage(
+			tempCtx.canvas,
+			rect.x,
+			rect.y,
+			rect.w,
+			rect.h,
+			rect.x,
+			rect.y,
+			rect.w,
+			rect.h,
+		);
+
+		const newImg = focusedCtx.getImageData(rect.x, rect.y, rect.w, rect.h);
+
+		// Create an action, to be able to revert
+		const action: UpdateImgAction = {
+			type: "updateImg",
+			rect,
+			oldImg,
+			newImg,
+		};
+
+		// Apply action
+		this.history.push([action]);
+
+		// Clear the temp layer
+		tempCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
+		this.tempBd = { ...EMPTY_BOUNDARY };
 	}
 
 	// -- Events
@@ -316,6 +388,7 @@ export class PaintState {
 
 	pointerUp() {
 		this.ptrState = undefined;
+		this.flushTempLayer();
 	}
 
 	drawIfPointerDown() {
@@ -328,9 +401,52 @@ export class PaintState {
 
 	// -- Main action handler
 
-	exec(a: Action): void | Action {}
+	exec(a: Action): void | Action {
+		switch (a.type) {
+			case "updateImg":
+				const ctx = this.getFocusedCtx();
+				const { rect, newImg } = a;
+				console.log("putImage", rect, newImg);
+				ctx.putImageData(newImg, rect.x, rect.y);
+				return a;
+			default:
+				throw new Error(`Unknown action type: ${a}`);
+		}
+	}
 
-	revert(a: Action) {}
+	revert(a: Action) {
+		switch (a.type) {
+			case "updateImg":
+				const ctx = this.getFocusedCtx();
+				const { rect, oldImg } = a;
+				ctx.putImageData(oldImg, rect.x, rect.y);
+				break;
+			default:
+				throw new Error(`Unknown action type: ${a}`);
+		}
+	}
+
+	// -- History manager
+
+	applyActions(actions: Action[]) {
+		this.history.exec(actions);
+	}
+
+	undo() {
+		if (this.history.undo()) {
+			toast.success("Undo");
+		} else {
+			toast.error("Nothing to undo!");
+		}
+	}
+
+	redo() {
+		if (this.history.redo()) {
+			toast.success("Redo");
+		} else {
+			toast.error("Nothing to redo!");
+		}
+	}
 
 	// -- Event Loop
 

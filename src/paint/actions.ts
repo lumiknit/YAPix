@@ -3,28 +3,14 @@
  * @description The module contains available actions, and types for edit history.
  */
 
+import { Layer } from ".";
 import { Rect } from "./types";
 
 // -- Painting actions
 
-/** Put the part of image */
-export type PutImage = {
-	type: "updateImg";
-	/** Layer index */
-	layerIndex: number;
-	/** Where the image data was updated */
-	rect: Rect;
-	/** Image data for revert */
-	oldImg: ImageData;
-	/** Overlay image data */
-	overlayImg: ImageData;
-};
-
-/** Update the part of image. */
+/** Update the part of image of the focused layer. */
 export type UpdateImgAction = {
 	type: "updateImg";
-	/** Layer index */
-	layerIndex: number;
 	/** Where the image data was updated */
 	rect: Rect;
 	/** Image data for revert */
@@ -55,17 +41,29 @@ export type UpdateLayerInfoAction = {
 export type DeleteLayerAction = {
 	type: "deleteLayer";
 	index: number;
+	/** Layer to revert */
+	layer: Layer;
 };
 
-/** Put the image data of an imaeg to other image */
-export type PutLayerAction = {
-	type: "putLayer";
+/** Delete the given layer */
+export type FocusLayerAction = {
+	type: "focusLayer";
+	index: number;
+	oldIndex: number;
+};
+
+/** Merge the image data of an imaeg to other image */
+export type MergeLayerAction = {
+	type: "mergeLayer";
 	dest: number;
 	src: number;
+	srcLayer: Layer;
+	destOldImage: ImageData;
 };
 
 export type Action =
 	| UpdateImgAction
 	| NewLayerAction
 	| UpdateLayerInfoAction
-	| DeleteLayerAction;
+	| DeleteLayerAction
+	| MergeLayerAction;

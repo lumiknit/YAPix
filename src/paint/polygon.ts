@@ -3,7 +3,7 @@
  * @description This module provide 'polygon' which can be used to draw on canvas or export to svg.
  */
 
-import { Boundary } from ".";
+import { Boundary, extendBoundaryByRadius, extendBoundaryByRect } from ".";
 
 export type Polygon = {
 	points: [number, number][];
@@ -30,10 +30,7 @@ export const polygon = (points: [number, number][]): Polygon => {
 		},
 	};
 	for (const [x, y] of points) {
-		p.bd.l = Math.min(p.bd.l, x);
-		p.bd.t = Math.min(p.bd.t, y);
-		p.bd.r = Math.max(p.bd.r, x);
-		p.bd.b = Math.max(p.bd.b, y);
+		p.bd = extendBoundaryByRadius(p.bd, x, y, 0);
 	}
 	return p;
 };

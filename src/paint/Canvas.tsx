@@ -1,4 +1,4 @@
-import { Component, onMount, onCleanup } from "solid-js";
+import { Component, onMount, onCleanup, JSX } from "solid-js";
 
 import { PaintState } from "./state";
 
@@ -29,6 +29,21 @@ const Canvas: Component<Props> = props => {
 		clearTimeout(mainLoop);
 	});
 
+	const canvasStyle = (
+		zIndex: number,
+		x: number,
+		y: number,
+	): JSX.CSSProperties => {
+		const d = props.z.display();
+		return {
+			"z-index": `${zIndex}`,
+			top: `${x}px`,
+			left: `${y}px`,
+			width: `${props.z.size.w * d.zoom}px`,
+			height: `${props.z.size.h * d.zoom}px`,
+		};
+	};
+
 	return (
 		<div ref={rootRef!} class="cv-root">
 			<Cursor z={props.z} />
@@ -42,14 +57,18 @@ const Canvas: Component<Props> = props => {
 					}
 				}>
 				<canvas
+					ref={props.z.tempLayerRef}
+					class="cv-pix"
+					style={canvasStyle(6, 0, 0)}
+					width={props.z.size.w}
+					height={props.z.size.h}
+				/>
+				<canvas
 					ref={props.z.focusedLayerRef}
 					class="cv-pix"
 					style={{
-						"z-index": 1,
-						top: 0,
-						left: 0,
-						width: `${props.z.size.w * props.z.display().zoom}px`,
-						height: `${props.z.size.h * props.z.display().zoom}px`,
+						...canvasStyle(5, 0, 0),
+						visibility: props.z.showFocusedLayer() ? "visible" : "hidden",
 					}}
 					width={props.z.size.w}
 					height={props.z.size.h}
@@ -57,26 +76,14 @@ const Canvas: Component<Props> = props => {
 				<canvas
 					ref={props.z.belowLayerRef}
 					class="cv-pix"
-					style={{
-						"z-index": 0.5,
-						top: 0,
-						left: 0,
-						width: `${props.z.size.w * props.z.display().zoom}px`,
-						height: `${props.z.size.h * props.z.display().zoom}px`,
-					}}
+					style={canvasStyle(4, 0, 0)}
 					width={props.z.size.w}
 					height={props.z.size.h}
 				/>
 				<canvas
 					ref={props.z.aboveLayerRef}
 					class="cv-pix"
-					style={{
-						"z-index": 1.5,
-						top: 0,
-						left: 0,
-						width: `${props.z.size.w * props.z.display().zoom}px`,
-						height: `${props.z.size.h * props.z.display().zoom}px`,
-					}}
+					style={canvasStyle(9, 0, 0)}
 					width={props.z.size.w}
 					height={props.z.size.h}
 				/>
