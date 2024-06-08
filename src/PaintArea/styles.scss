@@ -62,3 +62,20 @@ button.p-dot-btn {
 	width: 1em;
 	height: 1em;
 }
+
+/* -- Modal */
+.pa-m-color-picker {
+	margin: auto;
+	min-width: 10rem;
+	min-height: 10rem;
+
+	display: flex;
+	flex-direction: column;
+	justify-items: center;
+	align-items: center;
+
+	& > .wheel {
+		width: 200px;
+		height: 200px;
+	}
+}

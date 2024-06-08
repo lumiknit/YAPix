@@ -1,12 +1,15 @@
 import { Component } from "solid-js";
 import { PaintState } from "./state";
 import { polygonToSVG } from "./polygon";
+import { boundaryToRect } from ".";
 
 type Props = {
 	z: PaintState;
 };
 
 const Cursor: Component<Props> = props => {
+	const z = () => Math.floor(props.z.display().zoom);
+	const iz = () => 1 / Math.floor(props.z.display().zoom);
 	const strokeWidth = () => {
 		const d = props.z.display();
 		return d.zoom > 4 ? 2 : 1;
@@ -28,15 +31,19 @@ const Cursor: Component<Props> = props => {
 		return Math.floor(d.y + d.zoom * props.z.brushCursorY());
 	};
 	const brushW = () => {
-		const bs = props.z.brush().shape;
-		return bs.maxX - bs.minX;
+		const bd = props.z.brush().shape.bd;
+		return bd.r - bd.l;
 	};
 	const brushH = () => {
-		const bs = props.z.brush().shape;
-		return bs.maxY - bs.minY;
+		const bd = props.z.brush().shape.bd;
+		return bd.b - bd.t;
 	};
-	const z = () => Math.floor(props.z.display().zoom);
-	const iz = () => 1 / Math.floor(props.z.display().zoom);
+
+	const viewBox = () => {
+		const r = boundaryToRect(props.z.brush().shape.bd);
+		const sw = strokeWidth() * iz();
+		return `${r.x - sw} ${r.y - sw} ${r.w + 2 * sw} ${r.h + 2 * sw}`;
+	};
 
 	return (
 		<>
@@ -54,9 +61,9 @@ const Cursor: Component<Props> = props => {
 					"z-index": 2,
 				}}>
 				<svg
-					width={2 + z() * brushW()}
-					height={2 + z() * brushH()}
-					viewBox={`${-iz() + props.z.brush().shape.minX} ${-iz() + props.z.brush().shape.minY} ${brushW() + 2 * iz()} ${brushH() + 2 * iz()}`}
+					width={2 * strokeWidth() + z() * brushW()}
+					height={2 * strokeWidth() + z() * brushH()}
+					viewBox={viewBox()}
 					style={{
 						transform: `translate(-1px, -1px)`,
 						stroke: "green",

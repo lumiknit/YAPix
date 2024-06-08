@@ -42,10 +42,14 @@ export const mountEvents = (
 	// Wheel
 	eventHandlers.wheel = (e: WheelEvent) => {
 		if (e.ctrlKey || e.metaKey) {
-			z.setDisplay(d => ({
-				...d,
-				zoom: z.display().zoom * (1 - e.deltaY / 100),
-			}));
+			z.setDisplay(d => {
+				const bc = z.cursor().brush;
+				const oldZoom = d.zoom;
+				const zoom = oldZoom * Math.max(0.001, 1 - e.deltaY / 100);
+				const x = d.x - bc.x * (zoom - oldZoom);
+				const y = d.y - bc.y * (zoom - oldZoom);
+				return { x, y, zoom };
+			});
 		} else {
 			z.setDisplay(d => ({
 				...d,

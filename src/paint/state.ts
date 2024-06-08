@@ -49,6 +49,10 @@ export class PaintState {
 	/** Layers. 0 is bottom. */
 	layers: Layer[];
 
+	/** Background color */
+	bgColor: Accessor<RGBA>;
+	setBgColor: Setter<RGBA>;
+
 	// -- Editing state
 
 	/** History Manager */
@@ -108,6 +112,8 @@ export class PaintState {
 
 		this.size = { w, h };
 		this.layers = [];
+
+		[this.bgColor, this.setBgColor] = createSignal(rgba(0, 0, 0, 0));
 
 		this.history = new HistoryManager<Action>(
 			this.config().maxHistory,
@@ -267,7 +273,6 @@ export class PaintState {
 
 		const dx = x - lastX - 0.5;
 		const dy = y - lastY - 0.5;
-		console.log("drawFree", lastX, lastY, x, y);
 
 		if (dx * dx + dy * dy < 1.4) return;
 		this.ptrState!.last = {

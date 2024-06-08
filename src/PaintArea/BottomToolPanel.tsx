@@ -5,6 +5,7 @@ import {
 	TbArrowBackUp,
 	TbArrowBigDown,
 	TbArrowForwardUp,
+	TbBoxMultiple,
 	TbBrush,
 	TbBucket,
 	TbCircle,
@@ -21,7 +22,7 @@ type Props = {
 	z: PaintState;
 };
 
-const ToolPanel: Component<Props> = props => {
+const BottomToolPanel: Component<Props> = props => {
 	return (
 		<div class="p-tool-panel">
 			<div class="p-tool-row p-tr-dev">
@@ -43,53 +44,46 @@ const ToolPanel: Component<Props> = props => {
 			<div class="p-tool-row p-tr-util">
 				<ToolColorPreview z={props.z} />
 				<ToolButton>
-					{" "}
-					<TbSelectAll />{" "}
+					<TbSelectAll />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbArrowBackUp />{" "}
+					<TbArrowBackUp />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbArrowForwardUp />{" "}
+					<TbArrowForwardUp />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbSettings />{" "}
+					<TbBoxMultiple />
+				</ToolButton>
+				<ToolButton>
+					<TbSettings />
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-draw">
 				<ToolButton> C </ToolButton>
 				<ToolButton>
-					{" "}
-					<TbColorPicker />{" "}
+					<TbColorPicker />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbEraser />{" "}
+					<TbEraser />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbBrush />{" "}
+					<TbBrush />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbBucket />{" "}
+					<TbBucket />
 				</ToolButton>
 				<ToolButton>
-					{" "}
-					<TbCircle />{" "}
+					<TbCircle />
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-dot">
 				<button class="p-tool-btn p-dot-btn">
-					{" "}
-					<TbArrowBigDown /> DOT!{" "}
+					<TbArrowBigDown /> DOT!
 				</button>
 			</div>
 		</div>
 	);
 };
 
-export default ToolPanel;
+export default BottomToolPanel;

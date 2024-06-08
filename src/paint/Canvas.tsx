@@ -5,7 +5,7 @@ import { PaintState } from "./state";
 import "./index.scss";
 import Cursor from "./Cursor";
 import { EventBindInfo, mountEvents, unmountEvents } from "./event-handler";
-import { styleBgCheckerboard } from "solid-tiny-color";
+import CanvasBackground from "./CanvasBackground";
 
 type Props = {
 	z: PaintState;
@@ -80,16 +80,7 @@ const Canvas: Component<Props> = props => {
 					width={props.z.size.w}
 					height={props.z.size.h}
 				/>
-				<div
-					style={{
-						"z-index": 0.1,
-						top: 0,
-						left: 0,
-						width: `${props.z.size.w * props.z.display().zoom}px`,
-						height: `${props.z.size.h * props.z.display().zoom}px`,
-						...styleBgCheckerboard("#666", "#999", 32),
-					}}
-				/>
+				<CanvasBackground z={props.z} />
 			</div>
 		</div>
 	);

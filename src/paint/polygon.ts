@@ -3,12 +3,11 @@
  * @description This module provide 'polygon' which can be used to draw on canvas or export to svg.
  */
 
+import { Boundary } from ".";
+
 export type Polygon = {
 	points: [number, number][];
-	minX: number;
-	minY: number;
-	maxX: number;
-	maxY: number;
+	bd: Boundary;
 
 	path2D?: Path2D;
 	svg?: string;
@@ -22,16 +21,19 @@ export type Polygon = {
 export const polygon = (points: [number, number][]): Polygon => {
 	const p: Polygon = {
 		points,
-		minX: Infinity,
-		minY: Infinity,
-		maxX: -Infinity,
-		maxY: -Infinity,
+		bd: {
+			// Calculate boundary
+			l: Infinity,
+			t: Infinity,
+			r: -Infinity,
+			b: -Infinity,
+		},
 	};
 	for (const [x, y] of points) {
-		p.minX = Math.min(p.minX, x);
-		p.minY = Math.min(p.minY, y);
-		p.maxX = Math.max(p.maxX, x);
-		p.maxY = Math.max(p.maxY, y);
+		p.bd.l = Math.min(p.bd.l, x);
+		p.bd.t = Math.min(p.bd.t, y);
+		p.bd.r = Math.max(p.bd.r, x);
+		p.bd.b = Math.max(p.bd.b, y);
 	}
 	return p;
 };
@@ -65,8 +67,8 @@ export const polygonTo4SegPath2D = (
 	h: number,
 ): Path2D => {
 	const path = new Path2D();
-	const cx = (p.minX + p.maxX) / 2;
-	const cy = (p.minY + p.maxY) / 2;
+	const cx = (p.bd.l + p.bd.r) / 2;
+	const cy = (p.bd.t + p.bd.b) / 2;
 	const [x0, y0] = p.points[0];
 	path.moveTo(x0, y0);
 	for (let i = 1; i < p.points.length; i++) {

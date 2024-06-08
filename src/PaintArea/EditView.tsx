@@ -3,7 +3,7 @@ import { Component } from "solid-js";
 import { PaintState } from "../paint";
 
 import PaintArea from "./PaintArea";
-import ToolPanel from "./ToolPanel";
+import ToolPanel from "./BottomToolPanel";
 
 import "./styles.scss";
 import { PaintConfig } from "../paint/config";

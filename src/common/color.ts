@@ -1,3 +1,5 @@
+import { RGB } from "solid-tiny-color";
+
 export type RGBA = Uint8ClampedArray; // r, g, b, a: 0-255
 
 /**
@@ -27,4 +29,13 @@ export const normalBlend = (fg: RGBA, bg: RGBA): RGBA => {
 		fg[2] * a + bg[2] * ab,
 		fg[3] + bg[3] * na,
 	]);
+};
+
+/** Convert colors for solid-tiny-color */
+export const rgbaToTinyColor = (rgba: RGBA): [RGB, number] => {
+	return [[rgba[0], rgba[1], rgba[2]], rgba[3] / 255];
+};
+
+export const tinyColorToRGBA = (c: RGB, a: number): RGBA => {
+	return new Uint8ClampedArray([...c, Math.round(a * 255)]);
 };

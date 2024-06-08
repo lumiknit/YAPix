@@ -1,3 +1,11 @@
+import { RGB } from "solid-tiny-color";
+
+export type PaintConfigCanvasBackground = {
+	color1: RGB;
+	color2: RGB;
+	size: number;
+};
+
 export type PaintConfig = {
 	/**
 	 * fps for rendering / brush processing.
@@ -24,6 +32,11 @@ export type PaintConfig = {
 	 * Default is 100, min is 8.
 	 */
 	maxHistory?: number;
+
+	/**
+	 * Background Checkboard Config
+	 */
+	bgCheckerboard?: PaintConfigCanvasBackground;
 };
 
 export type CompiledPaintConfig = PaintConfig & {
@@ -38,6 +51,9 @@ export type CompiledPaintConfig = PaintConfig & {
 
 	/** Max history size */
 	maxHistory: number;
+
+	/** Background Checkboard Config */
+	bgCheckerboard: PaintConfigCanvasBackground;
 };
 
 export const compilePaintConfig = (
@@ -49,5 +65,10 @@ export const compilePaintConfig = (
 		canvasClickAction: config.canvasClickAction || "moveTouchOnly",
 		brushStabFactor: Math.pow(0.1, config.brushStabilization || 0),
 		maxHistory: Math.max(config.maxHistory || 100, 8),
+		bgCheckerboard: config.bgCheckerboard || {
+			color1: [102, 102, 102],
+			color2: [153, 153, 153],
+			size: 32,
+		},
 	};
 };

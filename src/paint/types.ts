@@ -16,6 +16,28 @@ export type Size = {
 /** 2D Rect */
 export type Rect = Pos & Size;
 
+/** Boundary */
+export type Boundary = {
+	l: number;
+	r: number;
+	t: number;
+	b: number;
+};
+
+export const rectToBoundary = (rect: Rect): Boundary => ({
+	l: rect.x,
+	r: rect.x + rect.w,
+	t: rect.y,
+	b: rect.y + rect.h,
+});
+
+export const boundaryToRect = (boundary: Boundary): Rect => ({
+	x: boundary.l,
+	y: boundary.t,
+	w: boundary.r - boundary.l,
+	h: boundary.b - boundary.t,
+});
+
 /** Display */
 export type Display = Pos & {
 	zoom: number;

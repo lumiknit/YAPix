@@ -1,6 +1,15 @@
 import { Component } from "solid-js";
-import { rgbaForStyle } from "../common/color";
+import { modal } from "@lumiknit/solid-fekit";
+
+import {
+	rgba,
+	rgbaForStyle,
+	rgbaToTinyColor,
+	tinyColorToRGBA,
+} from "../common/color";
 import { PaintState } from "../paint";
+import ModalColorPicker from "./ModalColorPicker";
+import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
 
 type Props = {
 	z: PaintState;
@@ -8,7 +17,15 @@ type Props = {
 
 export const ToolColorPreview: Component<Props> = props => {
 	const handleClick = () => {
-		props.z.useColorHSV([Math.random() * 360, 1, 1]);
+		const [rgb, a] = rgbaToTinyColor(props.z.palette().current);
+		const hsv = rgbToHSV(rgb);
+		modal.openModal(ModalColorPicker, {
+			color: hsv,
+			onColor: (color: HSV) => {
+				props.z.useColorHSV(color);
+			},
+		});
+		console.log("A");
 	};
 	return (
 		<div

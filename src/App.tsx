@@ -3,6 +3,8 @@ import { Toaster } from "solid-toast";
 
 import { modal } from "@lumiknit/solid-fekit";
 
+import "./App.scss";
+
 import EditView from "./PaintArea/EditView";
 
 const App: Component = () => {
