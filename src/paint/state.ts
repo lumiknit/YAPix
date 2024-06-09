@@ -30,7 +30,7 @@ import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
 import { HistoryManager } from "./action-history";
 import { Action, UpdateImgAction } from "./actions";
 import toast from "solid-toast";
-import { emptyCtx } from ".";
+import { emptyCanvasContext, extractCanvasRect, putContextToContext } from ".";
 
 export type Brush = {
 	/** Brush shape */
@@ -154,9 +154,7 @@ export class PaintState {
 		[this.config, this.setConfig] = createSignal(compilePaintConfig(config));
 
 		this.size = { w, h };
-		this.layers = [
-			createEmptyLayer("Layer 1", w, h),
-		];
+		this.layers = [createEmptyLayer("Layer 1", w, h)];
 
 		this.bgColor = rgba(0, 0, 0, 0);
 
@@ -211,20 +209,14 @@ export class PaintState {
 	exportImage(scale: number): CanvasRenderingContext2D {
 		this.updateFocusedLayerData();
 
-		const ectx = emptyCtx(
-			this.size.w,
-			this.size.h,
-		);
-		for(let i = 0; i < this.layers.length; i++) {
+		const ectx = emptyCanvasContext(this.size.w, this.size.h);
+		for (let i = 0; i < this.layers.length; i++) {
 			drawLayerToCanvas(ectx, this.layers[i]);
 		}
 		scale = Math.min(1, Math.floor(scale));
 		if (scale <= 1) return ectx;
 
-		const ctx = emptyCtx(
-			this.size.w * scale,
-			this.size.h * scale,
-		);
+		const ctx = emptyCanvasContext(this.size.w * scale, this.size.h * scale);
 		ctx.scale(scale, scale);
 		ctx.imageSmoothingEnabled = false;
 		ctx.imageSmoothingQuality = "low";
@@ -368,7 +360,7 @@ export class PaintState {
 		return {
 			x: Math.round(cur.brush.x - b.size.w / 2),
 			y: Math.round(cur.brush.y - b.size.h / 2),
-		}
+		};
 	}
 
 	/** Set brush shape.
@@ -552,7 +544,7 @@ export class PaintState {
 		const focusedCtx = this.focusedLayerRef?.getContext("2d")!;
 		// Extract the boundary
 		const rect = boundaryToRect(this.tempBd);
-		const oldImg = focusedCtx.getImageData(rect.x, rect.y, rect.w, rect.h);
+		const oldImg = extractCanvasRect(focusedCtx, rect);
 
 		if (ERASER_TYPE_TOOLS.has(tool)) {
 			focusedCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
@@ -620,13 +612,12 @@ export class PaintState {
 			case "updateImg":
 				const ctx = this.getFocusedCtx();
 				const { rect, newImg } = a;
-				if(!newImg) {
+				if (!newImg) {
 					toast.error("Unknown error");
 					console.error("exec failed: newImg is not set.");
 					return;
 				}
-				console.log("putImage", rect, newImg);
-				ctx.putImageData(newImg, rect.x, rect.y);
+				putContextToContext(ctx, newImg, rect.x, rect.y);
 				this.clearTempLayer(rect);
 				return a;
 			default:
@@ -641,9 +632,9 @@ export class PaintState {
 				const { rect, oldImg, newImg } = a;
 				if (!newImg) {
 					// Keep the current image to revert
-					a.newImg = ctx.getImageData(rect.x, rect.y, rect.w, rect.h);
+					a.newImg = extractCanvasRect(ctx, rect);
 				}
-				ctx.putImageData(oldImg, rect.x, rect.y);
+				putContextToContext(ctx, oldImg, rect.x, rect.y);
 				this.clearTempLayer(rect);
 				break;
 			default:

@@ -43,15 +43,14 @@ const BottomToolPanel: Component<Props> = props => {
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-file">
-				<ToolButton onClick={
-					() => {
+				<ToolButton
+					onClick={() => {
 						const ctx = props.z.exportImage(4);
 						const a = document.createElement("a");
 						a.href = ctx.canvas.toDataURL();
 						a.download = "image.png";
 						a.click();
-					}
-				}>
+					}}>
 					Export
 				</ToolButton>
 			</div>
@@ -78,16 +77,18 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton>
 					<TbColorPicker />
 				</ToolButton>
-				<ToolButton onClick={() => {
-					props.z.useTool("eraser");
-					toast.success("Eraser selected");
-				}}>
+				<ToolButton
+					onClick={() => {
+						props.z.useTool("eraser");
+						toast.success("Eraser selected");
+					}}>
 					<TbEraser />
 				</ToolButton>
-				<ToolButton onClick={() => {
-					props.z.useTool("brush");
-					toast.success("Brush selected");
-				}}>
+				<ToolButton
+					onClick={() => {
+						props.z.useTool("brush");
+						toast.success("Brush selected");
+					}}>
 					<TbBrush />
 				</ToolButton>
 				<ToolButton>

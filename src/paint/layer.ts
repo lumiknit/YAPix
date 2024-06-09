@@ -1,5 +1,5 @@
 import { Pos, Rect, ORIGIN } from ".";
-import { emptyCtx } from "./utils";
+import { emptyCanvasContext } from "./utils";
 
 /** Layer data except image data */
 export type LayerData = {
@@ -62,7 +62,7 @@ export const resizeLayer = (
 	dx: number,
 	dy: number,
 ): Layer => {
-	const ctx = emptyCtx(width, height);
+	const ctx = emptyCanvasContext(width, height);
 
 	ctx.putImageData(layer.data, dx, dy);
 	const newImageData = ctx.getImageData(dx, dy, width, height);
@@ -80,7 +80,7 @@ export const drawLayerToCanvas = (
 	ctx: CanvasRenderingContext2D,
 	layer: Layer,
 ) => {
-	const ectx = emptyCtx(layer.data.width, layer.data.height);
+	const ectx = emptyCanvasContext(layer.data.width, layer.data.height);
 	ectx.putImageData(layer.data, 0, 0);
 	ctx.drawImage(ectx.canvas, layer.off.x, layer.off.y);
 };

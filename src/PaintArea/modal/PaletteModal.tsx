@@ -1,8 +1,6 @@
 import { Component } from "solid-js";
 
-type Props = {
-
-};
+type Props = {};
 
 const PaletteModal: Component<Props> = () => {
 	return (

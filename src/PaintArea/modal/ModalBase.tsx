@@ -13,9 +13,7 @@ export const ModalBase: Component<Props> = props => {
 	};
 	return (
 		<div class="pa-modal-ext" onClick={handleExtClick}>
-			<div class="modal-content">
-				{props.children}
-			</div>
+			<div class="modal-content">{props.children}</div>
 		</div>
 	);
 };

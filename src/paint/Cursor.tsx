@@ -26,7 +26,7 @@ const Cursor: Component<Props> = props => {
 		const pos = props.z.brushCursorPos();
 		const d = props.z.display();
 		return `translate(${Math.floor(d.x + d.zoom * pos.x)}px, ${Math.floor(d.y + d.zoom * pos.y)}px)`;
-	}
+	};
 	const brushW = () => {
 		const bd = props.z.brush().shape.bd;
 		return bd.r - bd.l;

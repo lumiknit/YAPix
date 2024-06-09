@@ -14,9 +14,9 @@ export type UpdateImgAction = {
 	/** Where the image data was updated */
 	rect: Rect;
 	/** Image data for revert */
-	oldImg: ImageData;
+	oldImg: CanvasRenderingContext2D;
 	/** New image data */
-	newImg?: ImageData;
+	newImg?: CanvasRenderingContext2D;
 };
 
 // -- Layer control
