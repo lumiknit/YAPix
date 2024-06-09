@@ -570,14 +570,11 @@ export class PaintState {
 			rect.h,
 		);
 
-		const newImg = focusedCtx.getImageData(rect.x, rect.y, rect.w, rect.h);
-
 		// Create an action, to be able to revert
 		const action: UpdateImgAction = {
 			type: "updateImg",
 			rect,
 			oldImg,
-			newImg,
 		};
 
 		// Apply action
@@ -623,6 +620,11 @@ export class PaintState {
 			case "updateImg":
 				const ctx = this.getFocusedCtx();
 				const { rect, newImg } = a;
+				if(!newImg) {
+					toast.error("Unknown error");
+					console.error("exec failed: newImg is not set.");
+					return;
+				}
 				console.log("putImage", rect, newImg);
 				ctx.putImageData(newImg, rect.x, rect.y);
 				this.clearTempLayer(rect);
@@ -636,7 +638,11 @@ export class PaintState {
 		switch (a.type) {
 			case "updateImg":
 				const ctx = this.getFocusedCtx();
-				const { rect, oldImg } = a;
+				const { rect, oldImg, newImg } = a;
+				if (!newImg) {
+					// Keep the current image to revert
+					a.newImg = ctx.getImageData(rect.x, rect.y, rect.w, rect.h);
+				}
 				ctx.putImageData(oldImg, rect.x, rect.y);
 				this.clearTempLayer(rect);
 				break;

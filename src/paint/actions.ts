@@ -16,7 +16,7 @@ export type UpdateImgAction = {
 	/** Image data for revert */
 	oldImg: ImageData;
 	/** New image data */
-	newImg: ImageData;
+	newImg?: ImageData;
 };
 
 // -- Layer control

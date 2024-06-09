@@ -46,8 +46,7 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton onClick={
 					() => {
 						const ctx = props.z.exportImage(4);
-						const a = document.createElement
-						("a");
+						const a = document.createElement("a");
 						a.href = ctx.canvas.toDataURL();
 						a.download = "image.png";
 						a.click();
