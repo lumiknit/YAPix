@@ -17,6 +17,7 @@ import {
 	TbSettings,
 } from "solid-icons/tb";
 import { ToolColorPreview } from "./ToolColorPreview";
+import toast from "solid-toast";
 
 type Props = {
 	z: PaintState;
@@ -39,6 +40,20 @@ const BottomToolPanel: Component<Props> = props => {
 					}>
 					<TbPencilPlus />
 					Increase Brush
+				</ToolButton>
+			</div>
+			<div class="p-tool-row p-tr-file">
+				<ToolButton onClick={
+					() => {
+						const ctx = props.z.exportImage(4);
+						const a = document.createElement
+						("a");
+						a.href = ctx.canvas.toDataURL();
+						a.download = "image.png";
+						a.click();
+					}
+				}>
+					Export
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-util">
@@ -64,10 +79,16 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton>
 					<TbColorPicker />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => {
+					props.z.useTool("eraser");
+					toast.success("Eraser selected");
+				}}>
 					<TbEraser />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => {
+					props.z.useTool("brush");
+					toast.success("Brush selected");
+				}}>
 					<TbBrush />
 				</ToolButton>
 				<ToolButton>

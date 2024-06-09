@@ -76,11 +76,13 @@ export const resizeLayer = (
 	};
 };
 
-export const putLayerToCanvas = (
+export const drawLayerToCanvas = (
 	ctx: CanvasRenderingContext2D,
 	layer: Layer,
 ) => {
-	ctx.putImageData(layer.data, layer.off.x, layer.off.y);
+	const ectx = emptyCtx(layer.data.width, layer.data.height);
+	ectx.putImageData(layer.data, 0, 0);
+	ctx.drawImage(ectx.canvas, layer.off.x, layer.off.y);
 };
 
 export const canvasToLayer = (

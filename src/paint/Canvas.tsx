@@ -5,7 +5,6 @@ import { PaintState } from "./state";
 import "./index.scss";
 import Cursor from "./Cursor";
 import { EventBindInfo, mountEvents, unmountEvents } from "./event-handler";
-import CanvasBackground from "./CanvasBackground";
 
 type Props = {
 	z: PaintState;
@@ -18,6 +17,7 @@ const Canvas: Component<Props> = props => {
 	let ebi: EventBindInfo | undefined;
 	let mainLoop: number = 0;
 	onMount(() => {
+		props.z.init();
 		ebi = mountEvents(props.z, rootRef);
 		mainLoop = setInterval(
 			() => props.z.step(),
@@ -87,7 +87,6 @@ const Canvas: Component<Props> = props => {
 					width={props.z.size.w}
 					height={props.z.size.h}
 				/>
-				<CanvasBackground z={props.z} />
 			</div>
 		</div>
 	);

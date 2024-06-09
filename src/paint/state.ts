@@ -1,18 +1,22 @@
-import { Accessor, createSignal, Setter } from "solid-js";
-import { HSV, hsvToRGB, rgbToHSV } from "solid-tiny-color";
+import { Accessor, batch, createSignal, Setter } from "solid-js";
+import { HSV, hsvToRGB, rgbToHSV, rgbToStyle } from "solid-tiny-color";
 
 import { rgba, RGBA, rgbaForStyle } from "../common/color";
-import { Layer } from "./layer";
+import { Layer, createEmptyLayer, drawLayerToCanvas } from "./layer";
 import {
 	Boundary,
 	boundaryToRect,
 	Cursor,
 	Display,
+	DrawShape,
 	EMPTY_BOUNDARY,
+	ERASER_TYPE_TOOLS,
 	extendBoundaryByRect,
 	ORIGIN,
 	Pos,
+	Rect,
 	Size,
+	ToolType,
 } from "./types";
 import {
 	drawLineWithCallbacks,
@@ -24,8 +28,9 @@ import {
 } from "./polygon";
 import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
 import { HistoryManager } from "./action-history";
-import { Action, PutImageAction, UpdateImgAction } from "./actions";
+import { Action, UpdateImgAction } from "./actions";
 import toast from "solid-toast";
+import { emptyCtx } from ".";
 
 export type Brush = {
 	/** Brush shape */
@@ -34,6 +39,8 @@ export type Brush = {
 	/** Size */
 	size: Size;
 };
+
+export type BrushSet = Map<ToolType, Brush>;
 
 export type Palette = {
 	/** Current color */
@@ -61,8 +68,7 @@ export class PaintState {
 	layers: Layer[];
 
 	/** Background color */
-	bgColor: Accessor<RGBA>;
-	setBgColor: Setter<RGBA>;
+	bgColor: RGBA;
 
 	// -- Editing state
 
@@ -99,10 +105,22 @@ export class PaintState {
 	setPalette: Setter<Palette>;
 
 	/** Current brush shape */
-	brush: Accessor<Brush>;
+	brushSet: Accessor<BrushSet>;
 
 	/** Current brush shape setter */
-	setBrush: Setter<Brush>;
+	setBrushSet: Setter<BrushSet>;
+
+	/** Current draw shape */
+	drawShape: Accessor<DrawShape>;
+
+	/** Set current draw shape */
+	setDrawShape: Setter<DrawShape>;
+
+	/** Current tool */
+	tool: Accessor<ToolType>;
+
+	/** Set current tool */
+	setTool: Setter<ToolType>;
 
 	// Canvas Refs
 
@@ -136,9 +154,11 @@ export class PaintState {
 		[this.config, this.setConfig] = createSignal(compilePaintConfig(config));
 
 		this.size = { w, h };
-		this.layers = [];
+		this.layers = [
+			createEmptyLayer("Layer 1", w, h),
+		];
 
-		[this.bgColor, this.setBgColor] = createSignal(rgba(0, 0, 0, 0));
+		this.bgColor = rgba(0, 0, 0, 0);
 
 		this.history = new HistoryManager<Action>(
 			this.config().maxHistory,
@@ -165,13 +185,108 @@ export class PaintState {
 			history: [] as RGBA[],
 		});
 
-		[this.brush, this.setBrush] = createSignal({} as any);
+		[this.tool, this.setTool] = createSignal<ToolType>("brush");
+
+		[this.brushSet, this.setBrushSet] = createSignal(new Map(), {
+			equals: false,
+		});
 		this.setBrushShape(3, true);
+
+		[this.drawShape, this.setDrawShape] = createSignal<DrawShape>("free");
 
 		[this.showFocusedLayer, this.setShowFocusedLayer] = createSignal(true);
 
 		this.tempBd = { ...EMPTY_BOUNDARY };
 	}
+
+	init() {
+		this.renderBlurredLayer();
+	}
+
+	// -- Layers
+
+	/**
+	 * Convert the whole layers into a single canvas.
+	 */
+	exportImage(scale: number): CanvasRenderingContext2D {
+		this.updateFocusedLayerData();
+
+		const ectx = emptyCtx(
+			this.size.w,
+			this.size.h,
+		);
+		for(let i = 0; i < this.layers.length; i++) {
+			drawLayerToCanvas(ectx, this.layers[i]);
+		}
+		scale = Math.min(1, Math.floor(scale));
+		if (scale <= 1) return ectx;
+
+		const ctx = emptyCtx(
+			this.size.w * scale,
+			this.size.h * scale,
+		);
+		ctx.scale(scale, scale);
+		ctx.imageSmoothingEnabled = false;
+		ctx.imageSmoothingQuality = "low";
+		ctx.drawImage(ectx.canvas, 0, 0);
+		return ctx;
+	}
+
+	/**
+	 * Render the bottom and top layer. This will refresh the bottom and top layer canvas
+	 * with background color and layers below the focused layer.
+	 */
+	renderBlurredLayer() {
+		const ctx = this.belowLayerRef?.getContext("2d");
+		if (!ctx) return;
+
+		ctx.globalCompositeOperation = "source-over";
+
+		const cfg = this.config();
+
+		// If background color is transparent, fill the canvas with checkerboard
+		if (this.bgColor[3] < 255) {
+			ctx.fillStyle = rgbToStyle(cfg.bgCheckerboard.color1);
+			ctx.fillRect(0, 0, this.size.w, this.size.h);
+			ctx.fillStyle = rgbToStyle(cfg.bgCheckerboard.color2);
+			for (let y = 0; y < this.size.h; y += cfg.bgCheckerboard.size) {
+				for (
+					let x = ((y / cfg.bgCheckerboard.size) % 2) * cfg.bgCheckerboard.size;
+					x < this.size.w;
+					x += 2 * cfg.bgCheckerboard.size
+				) {
+					ctx.fillRect(x, y, cfg.bgCheckerboard.size, cfg.bgCheckerboard.size);
+				}
+			}
+		}
+
+		// Draw background color
+		ctx.fillStyle = rgbaForStyle(this.bgColor);
+		ctx.fillRect(0, 0, this.size.w, this.size.h);
+
+		// Then, draw layers below the focused layer
+		for (let i = 0; i < this.focusedLayer; i++) {
+			drawLayerToCanvas(ctx, this.layers[i]);
+		}
+
+		// Render for the top layer
+		const topCtx = this.aboveLayerRef?.getContext("2d");
+		if (!topCtx) return;
+		topCtx.clearRect(0, 0, this.size.w, this.size.h);
+		topCtx.globalCompositeOperation = "source-over";
+		for (let i = this.focusedLayer + 1; i < this.layers.length; i++) {
+			drawLayerToCanvas(topCtx, this.layers[i]);
+		}
+	}
+
+	/** Update focused layer data with current context */
+	private updateFocusedLayerData() {
+		const ctx = this.getFocusedCtx();
+		const img = ctx.getImageData(0, 0, this.size.w, this.size.h);
+		this.layers[this.focusedLayer].data = img;
+	}
+
+	// -- Color
 
 	/**
 	 * Change the current color
@@ -218,44 +333,81 @@ export class PaintState {
 	 * @param dt The time difference in milliseconds.
 	 */
 	updateBrushCursorPos(dt: number) {
-		const cfg = this.config();
-		const r = Math.pow(cfg.brushStabFactor, dt / 1000);
-		this.setCursor(c => {
-			return {
-				...c,
-				brush: {
-					x: c.brush.x * (1 - r) + c.real.x * r,
-					y: c.brush.y * (1 - r) + c.real.y * r,
-				},
-			};
-		});
+		if (!this.ptrState) {
+			// Teleport
+			this.setCursor(c => ({ ...c, brush: c.real }));
+		} else {
+			const cfg = this.config();
+			const r = Math.pow(cfg.brushStabFactor, dt / 1000);
+			this.setCursor(c => {
+				return {
+					...c,
+					brush: {
+						x: c.brush.x * (1 - r) + c.real.x * r,
+						y: c.brush.y * (1 - r) + c.real.y * r,
+					},
+				};
+			});
+		}
+	}
+
+	/** Get current brush for current tool */
+	brush(): Brush {
+		const tool = this.tool();
+		let brush = this.brushSet().get(tool);
+		if (!brush) {
+			brush = this.setBrushShape(1, true);
+		}
+		return brush;
 	}
 
 	/** Get brush cursor position */
-	brushCursorX() {
-		return Math.floor(this.cursor().brush.x - this.brush().size.w / 2 + 0.5);
-	}
-
-	/** Get brush cursor position */
-	brushCursorY() {
-		return Math.floor(this.cursor().brush.y - this.brush().size.h / 2 + 0.5);
+	brushCursorPos(): Pos {
+		const cur = this.cursor();
+		const b = this.brush();
+		return {
+			x: Math.round(cur.brush.x - b.size.w / 2),
+			y: Math.round(cur.brush.y - b.size.h / 2),
+		}
 	}
 
 	/** Set brush shape.
 	 * @param size The width/height of the brush shape.
 	 * @param round If true, the brush shape is a circle. Otherwise, it is a square.
 	 */
-	setBrushShape(size: number, round: boolean) {
+	setBrushShape(size: number, round: boolean): Brush {
 		const off = Math.floor(size / 2);
 		const shape = round
 			? ellipsePolygon(-off, -off, size, size)
 			: rectanglePolygon(-off, -off, size, size);
-		this.setBrush({
+		const brush = {
 			shape,
 			size: {
 				w: size,
 				h: size,
 			},
+		};
+		const tool = this.tool();
+		this.setBrushSet(b => b.set(tool, brush));
+		return brush;
+	}
+
+	// -- Tool
+
+	useTool(tool: ToolType) {
+		batch(() => {
+			this.setTool(tool);
+
+			const eraserType = ERASER_TYPE_TOOLS.has(tool);
+			this.setShowFocusedLayer(!eraserType);
+		});
+
+		// Clear the temp layer
+		this.clearTempLayer({
+			x: 0,
+			y: 0,
+			w: this.size.w,
+			h: this.size.h,
 		});
 	}
 
@@ -273,17 +425,73 @@ export class PaintState {
 		return ref.getContext("2d")!;
 	}
 
-	drawSingleBrush(x: number, y: number) {
+	/**
+	 * Clear the temp layer boundary.
+	 * The clear method will different by which tool is selected.
+	 *
+	 * @param rect The rectangle to clear.
+	 */
+	clearTempLayer(rect: Rect) {
+		const tool = this.tool();
 		const ctx = this.getTempCtx();
-		console.log(ctx);
+		ctx.clearRect(rect.x, rect.y, rect.w, rect.h);
 
-		ctx.fillStyle = rgbaForStyle(this.palette().current);
-		ctx.translate(x, y);
-		ctx.fill(polygonToPath2D(this.brush().shape));
-		ctx.translate(-x, -y);
+		if (ERASER_TYPE_TOOLS.has(tool)) {
+			// In this case, copy the contents from the focused layer
+			const focusedCtx = this.getFocusedCtx();
+			const oldComposite = ctx.globalCompositeOperation;
+			ctx.globalCompositeOperation = "source-over";
+			ctx.drawImage(
+				focusedCtx.canvas,
+				rect.x,
+				rect.y,
+				rect.w,
+				rect.h,
+				rect.x,
+				rect.y,
+				rect.w,
+				rect.h,
+			);
+			ctx.globalCompositeOperation = oldComposite;
+		}
 	}
 
-	drawFree(lastX: number, lastY: number, x: number, y: number) {
+	/**
+	 * Set the fill style & stroke style for the tool.
+	 */
+	private updateToolStyle(ctx: CanvasRenderingContext2D) {
+		switch (this.tool()) {
+			// Use current color, with source-over
+			case "brush":
+				ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(this.palette().current);
+				ctx.globalCompositeOperation = "source-over";
+				break;
+			// Use fixed color, with source-over
+			case "select":
+				ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(rgba(255, 0, 0, 128));
+				ctx.globalCompositeOperation = "source-over";
+				break;
+			// Use fixed color, by erasing
+			case "eraser":
+			case "deselect":
+				ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(rgba(255, 0, 0, 255));
+				ctx.globalCompositeOperation = "destination-out";
+				break;
+			// Otherwise, do not need to update settings.
+		}
+	}
+
+	private drawSingleBrush(x: number, y: number) {
+		const ctx = this.getTempCtx();
+
+		ctx.save();
+		this.updateToolStyle(ctx);
+		ctx.translate(x, y);
+		ctx.fill(polygonToPath2D(this.brush().shape));
+		ctx.restore();
+	}
+
+	private drawFree(lastX: number, lastY: number, x: number, y: number) {
 		const ctx = this.getTempCtx();
 
 		const dx = x - lastX - 0.5;
@@ -299,16 +507,19 @@ export class PaintState {
 		const shape = brush.shape;
 		const brushRect = boundaryToRect(shape.bd);
 
-		ctx.fillStyle = rgbaForStyle(this.palette().current);
+		ctx.save();
+		this.updateToolStyle(ctx);
+		let lx = 0,
+			ly = 0;
 		drawLineWithCallbacks(
 			lastX,
 			lastY,
 			Math.floor(x),
 			Math.floor(y),
 			(x, y, l) => {
-				ctx.translate(x, y);
+				ctx.translate(x - lx, y - ly);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
-				ctx.translate(-x, -y);
+				(lx = x), (ly = y);
 				this.tempBd = extendBoundaryByRect(this.tempBd, {
 					x: x + brushRect.x,
 					y: y + brushRect.y,
@@ -317,9 +528,9 @@ export class PaintState {
 				});
 			},
 			(y, x, l) => {
-				ctx.translate(x, y);
+				ctx.translate(x - lx, y - ly);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
-				ctx.translate(-x, -y);
+				(lx = x), (ly = y);
 				this.tempBd = extendBoundaryByRect(this.tempBd, {
 					x: x + brushRect.x,
 					y: y + brushRect.y,
@@ -328,18 +539,24 @@ export class PaintState {
 				});
 			},
 		);
+		ctx.restore();
 	}
 
 	/** Copy the result of temp layer into the current focused layer */
-	flushTempLayer() {
+	private flushTempLayer() {
 		// If nothing is drawn, do nothing
 		if (this.tempBd.l === Infinity) return;
 
+		const tool = this.tool();
 		const tempCtx = this.getTempCtx();
 		const focusedCtx = this.focusedLayerRef?.getContext("2d")!;
 		// Extract the boundary
 		const rect = boundaryToRect(this.tempBd);
 		const oldImg = focusedCtx.getImageData(rect.x, rect.y, rect.w, rect.h);
+
+		if (ERASER_TYPE_TOOLS.has(tool)) {
+			focusedCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
+		}
 
 		focusedCtx.drawImage(
 			tempCtx.canvas,
@@ -367,7 +584,7 @@ export class PaintState {
 		this.history.push([action]);
 
 		// Clear the temp layer
-		tempCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
+		this.clearTempLayer(rect);
 		this.tempBd = { ...EMPTY_BOUNDARY };
 	}
 
@@ -408,6 +625,7 @@ export class PaintState {
 				const { rect, newImg } = a;
 				console.log("putImage", rect, newImg);
 				ctx.putImageData(newImg, rect.x, rect.y);
+				this.clearTempLayer(rect);
 				return a;
 			default:
 				throw new Error(`Unknown action type: ${a}`);
@@ -420,6 +638,7 @@ export class PaintState {
 				const ctx = this.getFocusedCtx();
 				const { rect, oldImg } = a;
 				ctx.putImageData(oldImg, rect.x, rect.y);
+				this.clearTempLayer(rect);
 				break;
 			default:
 				throw new Error(`Unknown action type: ${a}`);

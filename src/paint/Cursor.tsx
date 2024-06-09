@@ -22,14 +22,11 @@ const Cursor: Component<Props> = props => {
 		const d = props.z.display();
 		return Math.floor(d.y + d.zoom * props.z.cursor().real.y);
 	};
-	const x = () => {
+	const brushCursorTransform = () => {
+		const pos = props.z.brushCursorPos();
 		const d = props.z.display();
-		return Math.floor(d.x + d.zoom * props.z.brushCursorX());
-	};
-	const y = () => {
-		const d = props.z.display();
-		return Math.floor(d.y + d.zoom * props.z.brushCursorY());
-	};
+		return `translate(${Math.floor(d.x + d.zoom * pos.x)}px, ${Math.floor(d.y + d.zoom * pos.y)}px)`;
+	}
 	const brushW = () => {
 		const bd = props.z.brush().shape.bd;
 		return bd.r - bd.l;
@@ -57,7 +54,7 @@ const Cursor: Component<Props> = props => {
 			<div
 				class="cv-cursor"
 				style={{
-					transform: `translate(${x()}px, ${y()}px)`,
+					transform: brushCursorTransform(),
 					"z-index": 2,
 				}}>
 				<svg

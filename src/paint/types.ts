@@ -76,8 +76,7 @@ export type Display = Pos & {
 	zoom: number;
 };
 
-// Cursors
-
+/** Cursor */
 export type Cursor = {
 	/**
 	 * Real cursor position
@@ -90,3 +89,25 @@ export type Cursor = {
 	 */
 	brush: Pos;
 };
+
+/** Tool Type */
+export type ToolType =
+	| "brush"
+	| "eraser"
+	| "select"
+	| "deselect"
+	| "move"
+	| "zoom"
+	| "spoid";
+
+export const ERASER_TYPE_TOOLS: Set<ToolType> = new Set(["eraser", "deselect"]);
+
+/** Draw shape */
+export type DrawShape =
+	| "free"
+	| "rect"
+	| "fillRect"
+	| "ellipse"
+	| "fillEllipse"
+	| "line"
+	| "fill";
