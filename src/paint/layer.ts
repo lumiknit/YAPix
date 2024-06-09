@@ -1,5 +1,5 @@
 import { Pos, Rect, ORIGIN } from ".";
-import { emptyCanvasContext } from "./utils";
+import { emptyCanvasContext, putContextToContext } from "./utils";
 
 /** Layer data except image data */
 export type LayerData = {
@@ -15,7 +15,7 @@ export type LayerData = {
 
 export type Layer = LayerData & {
 	/** Image data */
-	data: ImageData;
+	data: CanvasRenderingContext2D;
 };
 
 export const extractLayerData = (layer: Layer): LayerData => {
@@ -32,7 +32,7 @@ export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
 		name,
 		off: { ...ORIGIN },
 		opacity: 1,
-		data: new ImageData(w, h),
+		data: emptyCanvasContext(w, h),
 	};
 };
 
@@ -40,13 +40,14 @@ export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
  *
  */
 export const cloneLayer = (layer: Layer): Layer => {
+	const data = emptyCanvasContext(
+		layer.data.canvas.width,
+		layer.data.canvas.height,
+	);
+	data.drawImage(layer.data.canvas, 0, 0);
 	return {
 		...layer,
-		data: new ImageData(
-			new Uint8ClampedArray(layer.data.data),
-			layer.data.width,
-			layer.data.height,
-		),
+		data,
 	};
 };
 
@@ -62,17 +63,15 @@ export const resizeLayer = (
 	dx: number,
 	dy: number,
 ): Layer => {
-	const ctx = emptyCanvasContext(width, height);
-
-	ctx.putImageData(layer.data, dx, dy);
-	const newImageData = ctx.getImageData(dx, dy, width, height);
+	const data = emptyCanvasContext(width, height);
+	putContextToContext(data, layer.data, dx, dy);
 	return {
 		...layer,
 		off: {
 			x: layer.off.x + dx,
 			y: layer.off.y + dy,
 		},
-		data: newImageData,
+		data,
 	};
 };
 
@@ -80,21 +79,19 @@ export const drawLayerToCanvas = (
 	ctx: CanvasRenderingContext2D,
 	layer: Layer,
 ) => {
-	const ectx = emptyCanvasContext(layer.data.width, layer.data.height);
-	ectx.putImageData(layer.data, 0, 0);
-	ctx.drawImage(ectx.canvas, layer.off.x, layer.off.y);
+	ctx.drawImage(layer.data.canvas, layer.off.x, layer.off.y);
 };
 
 export const canvasToLayer = (
 	canvas: HTMLCanvasElement,
 	name: string,
 ): Layer => {
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("Failed to get 2d context");
+	const data = canvas.getContext("2d");
+	if (!data) throw new Error("Failed to get 2d context");
 	return {
 		name,
 		off: { ...ORIGIN },
 		opacity: 1,
-		data: ctx.getImageData(0, 0, canvas.width, canvas.height),
+		data,
 	};
 };
