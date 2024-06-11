@@ -1,28 +1,16 @@
-.modal-container {
-	position: absolute;
-	inset: 0;
-	z-index: 1000;
-	padding: 2rem;
-}
+input[type="range"] {
+	width: 100%;
+	height: 1em;
+	background: var(--c-fg-dim);
 
-.modal-item {
-	position: absolute;
-	bottom: 2rem;
-	left: 50%;
-	background-color: #202020;
-	border-radius: 1rem;
-	padding: 1rem;
-	box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
-
-	transition: all 0.3s ease;
-
-	&.shown {
-		opacity: 1;
-		transform: translate(-50%, 0%);
-	}
-
-	&.hidden {
-		opacity: 0;
-		transform: translate(-50%, 30%);
+	&::-webkit-slider-thumb,
+	&::-moz-range-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 1em;
+		height: 1em;
+		background: var(--c-fg-bold);
+		border-radius: 50%;
+		cursor: pointer;
 	}
 }

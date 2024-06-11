@@ -1,3 +1,5 @@
+@import "./modal.scss";
+
 .p-edit-view {
 	position: absolute;
 	inset: 0;
@@ -12,7 +14,7 @@
 }
 
 .p-tool-panel {
-	background-color: #8884;
+	background-color: var(--c-bg);
 }
 
 /* Tool Panel */
@@ -25,10 +27,10 @@
 }
 
 button.p-tool-btn {
-	background: #888;
-	border: outset 0.125rem #aaa;
-	border-radius: 0.25rem;
-	color: white;
+	background: none;
+	border: none;
+	border-radius: 0.5rem;
+	color: var(--c-fg);
 	cursor: pointer;
 	font-size: 1rem;
 	padding: 0.5rem 1rem;
@@ -39,28 +41,35 @@ button.p-tool-btn {
 	-moz-user-select: none;
 
 	&:hover {
-		border-style: inset;
-		background: #777;
-		color: #ddd;
+		background: var(--c-tool-btn-hover);
 	}
 
-	&:active {
-		border-style: inset;
-		background: #666;
-		color: #ccc;
+	&:active,
+	&.active {
+		background: var(--c-tool-btn-active);
+		color: var(--c-fg-bold);
 	}
 }
 
 button.p-dot-btn {
 	width: 90%;
 	padding: 1rem 1.5rem;
+	background: var(--c-prim);
+
+	&:hover {
+		background: var(--c-prim-dim);
+	}
+
+	&:active {
+		background: var(--c-prim-bold);
+	}
 }
 
 .p-tool-color-preview {
 	border: 1px solid #000;
-	border-radius: 50%;
-	width: 1em;
-	height: 1em;
+	border-radius: 0.5rem;
+	width: 1.5em;
+	height: 1.5em;
 }
 
 /* -- Modal */

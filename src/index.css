@@ -8,8 +8,8 @@
 	font-size: 16px;
 
 	color-scheme: light dark;
-	color: #aaa;
-	background-color: #242424;
+	color: var(--c-fg);
+	background-color: var(--c-bg);
 
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;
@@ -17,17 +17,44 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+	--c-bg: #fff;
+	--c-fg: #444;
+	--c-fg-dim: #888;
+	--c-fg-bold: #000;
+
+	--c-prim: #76cd5c;
+	--c-prim-dim: #a3de90;
+	--c-prim-bold: #3b7d26;
+
+	--c-modal-bg: #eee;
+
+	--c-tool-btn-hover: #ccc;
+	--c-tool-btn-active: #bbb;
+}
+
 @media (prefers-color-scheme: dark) {
 	:root {
-		color: #aaa;
-		background-color: #242424;
-	}
+		--c-bg: #000;
+		--c-fg: #ddd;
+		--c-fg-dim: #888;
+		--c-fg-bold: #fff;
 
-	body {
-		background-color: #242424;
+		--c-prim: #3b7d26;
+		--c-prim-dim: #5faa4a;
+		--c-prim-bold: #76cd5c;
+
+		--c-modal-bg: #444;
+
+		--c-tool-btn-hover: #444;
+		--c-tool-btn-active: #666;
 	}
 }
 
 body {
 	margin: 0;
+}
+
+* {
+	touch-action: manipulation;
 }

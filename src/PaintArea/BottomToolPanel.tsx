@@ -11,51 +11,33 @@ import {
 	TbCircle,
 	TbColorPicker,
 	TbEraser,
-	TbPencilMinus,
-	TbPencilPlus,
 	TbSelectAll,
 	TbSettings,
 } from "solid-icons/tb";
-import { ToolColorPreview } from "./ToolColorPreview";
 import toast from "solid-toast";
+import { ModalSwitches } from "./modal/Modals";
+import { rgbaForStyle } from "../common/color";
 
 type Props = {
 	z: PaintState;
+	sw: ModalSwitches;
 };
 
 const BottomToolPanel: Component<Props> = props => {
 	return (
 		<div class="p-tool-panel">
-			<div class="p-tool-row p-tr-dev">
-				<ToolButton
-					onClick={() =>
-						props.z.setBrushShape(props.z.brush().size.w - 1, true)
-					}>
-					<TbPencilMinus />
-					Decrease Brush
-				</ToolButton>
-				<ToolButton
-					onClick={() =>
-						props.z.setBrushShape(props.z.brush().size.w + 1, true)
-					}>
-					<TbPencilPlus />
-					Increase Brush
-				</ToolButton>
-			</div>
-			<div class="p-tool-row p-tr-file">
-				<ToolButton
-					onClick={() => {
-						const ctx = props.z.exportImage(4);
-						const a = document.createElement("a");
-						a.href = ctx.canvas.toDataURL();
-						a.download = "image.png";
-						a.click();
-					}}>
-					Export
-				</ToolButton>
-			</div>
 			<div class="p-tool-row p-tr-util">
-				<ToolColorPreview z={props.z} />
+				<div
+					class="p-tool-color-preview"
+					onClick={() => props.sw.palette(true)}
+					style={{
+						background: rgbaForStyle(props.z.palette().current),
+						"border-color": props.z.palette().hsv[2] > 0.5 ? "black" : "white",
+					}}
+				/>
+				<ToolButton onClick={() => props.sw.brush(true)}>
+					<TbBrush />
+				</ToolButton>
 				<ToolButton>
 					<TbSelectAll />
 				</ToolButton>
@@ -68,7 +50,7 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton>
 					<TbBoxMultiple />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => props.sw.settings(true)}>
 					<TbSettings />
 				</ToolButton>
 			</div>

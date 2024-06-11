@@ -38,6 +38,9 @@ export type Brush = {
 
 	/** Size */
 	size: Size;
+
+	/** Roundness */
+	round: boolean;
 };
 
 export type BrushSet = Map<ToolType, Brush>;
@@ -274,8 +277,13 @@ export class PaintState {
 	/** Update focused layer data with current context */
 	private updateFocusedLayerData() {
 		const ctx = this.getFocusedCtx();
-		const img = ctx.getImageData(0, 0, this.size.w, this.size.h);
-		this.layers[this.focusedLayer].data = img;
+		this.layers[this.focusedLayer].data.clearRect(
+			0,
+			0,
+			this.size.w,
+			this.size.h,
+		);
+		this.layers[this.focusedLayer].data.drawImage(ctx.canvas, 0, 0);
 	}
 
 	// -- Color
@@ -363,6 +371,18 @@ export class PaintState {
 		};
 	}
 
+	/** Get brushPos, the center pixel of with current cursor.
+	 * If floor each axis, it will be the top-left corner of the center pixel.
+	 */
+	brushPos(): Pos {
+		const b = this.brush();
+		const cb = this.cursor().brush;
+		return {
+			x: cb.x - (b.shape.bd.r + b.shape.bd.l - 1) / 2,
+			y: cb.y - (b.shape.bd.b + b.shape.bd.t - 1) / 2,
+		};
+	}
+
 	/** Set brush shape.
 	 * @param size The width/height of the brush shape.
 	 * @param round If true, the brush shape is a circle. Otherwise, it is a square.
@@ -378,6 +398,7 @@ export class PaintState {
 				w: size,
 				h: size,
 			},
+			round,
 		};
 		const tool = this.tool();
 		this.setBrushSet(b => b.set(tool, brush));
@@ -486,13 +507,15 @@ export class PaintState {
 	private drawFree(lastX: number, lastY: number, x: number, y: number) {
 		const ctx = this.getTempCtx();
 
-		const dx = x - lastX - 0.5;
-		const dy = y - lastY - 0.5;
+		const dx = x - lastX;
+		const dy = y - lastY;
 
 		if (dx * dx + dy * dy < 1.4) return;
+		const fx = Math.floor(x),
+			fy = Math.floor(y);
 		this.ptrState!.last = {
-			x: Math.floor(x),
-			y: Math.floor(y),
+			x: fx,
+			y: fy,
 		};
 
 		const brush = this.brush();
@@ -506,8 +529,8 @@ export class PaintState {
 		drawLineWithCallbacks(
 			lastX,
 			lastY,
-			Math.floor(x),
-			Math.floor(y),
+			fx,
+			fy,
 			(x, y, l) => {
 				ctx.translate(x - lx, y - ly);
 				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
@@ -580,16 +603,17 @@ export class PaintState {
 	// -- Events
 
 	pointerDown() {
-		const cb = this.cursor().brush;
-		const x = cb.x,
-			y = cb.y;
+		const pos = this.brushPos();
+
+		const x = Math.floor(pos.x),
+			y = Math.floor(pos.y);
 
 		this.ptrState = {
-			start: { x, y },
-			last: { x: Math.floor(x), y: Math.floor(y) },
+			start: { ...pos },
+			last: { x, y },
 		};
 
-		this.drawSingleBrush(Math.floor(x), Math.floor(y));
+		this.drawSingleBrush(x, y);
 	}
 
 	pointerUp() {
@@ -600,9 +624,9 @@ export class PaintState {
 	drawIfPointerDown() {
 		if (!this.ptrState) return;
 
-		const cb = this.cursor().brush;
+		const pos = this.brushPos();
 
-		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, cb.x, cb.y);
+		this.drawFree(this.ptrState.last.x, this.ptrState.last.y, pos.x, pos.y);
 	}
 
 	// -- Main action handler
@@ -649,17 +673,13 @@ export class PaintState {
 	}
 
 	undo() {
-		if (this.history.undo()) {
-			toast.success("Undo");
-		} else {
+		if (!this.history.undo()) {
 			toast.error("Nothing to undo!");
 		}
 	}
 
 	redo() {
-		if (this.history.redo()) {
-			toast.success("Redo");
-		} else {
+		if (!this.history.redo()) {
 			toast.error("Nothing to redo!");
 		}
 	}

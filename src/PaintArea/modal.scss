@@ -1,0 +1,47 @@
+.pa-modal-ext {
+	z-index: 100;
+	position: absolute;
+
+	display: flex;
+	flex-direction: row;
+	align-items: end;
+	justify-content: center;
+
+	inset: 0;
+	padding: 1rem;
+
+	&.left {
+		justify-content: start;
+	}
+
+	&.right {
+		justify-content: end;
+	}
+}
+
+.pa-modal-content {
+	color: var(--c-fg);
+	background-color: var(--c-modal-bg);
+	box-shadow: 0 0 1rem 0.25rem #0004;
+	border-radius: 0.5rem;
+	width: 480px;
+	max-width: 75%;
+	max-height: 75%;
+	padding: 1rem;
+}
+
+.pa-modal-title {
+	font-size: 2em;
+	font-weight: bold;
+	margin: 0;
+}
+
+.pa-color-picker {
+	& > .wheel {
+		margin: 1rem auto;
+		width: 100%;
+		max-width: 240px;
+		/* Same as width */
+		aspect-ratio: 1;
+	}
+}

@@ -1,12 +1,14 @@
 import { Component } from "solid-js";
 
-import { PaintState } from "../paint";
+import { Canvas, PaintState } from "../paint";
 
-import PaintArea from "./PaintArea";
 import ToolPanel from "./BottomToolPanel";
 
 import "./styles.scss";
 import { PaintConfig } from "../paint/config";
+import ModalBase from "./modal/ModalBase";
+import PaletteModal from "./modal/PaletteModal";
+import { Modals, createModalSwitches } from "./modal/Modals";
 
 type Props = {};
 
@@ -15,10 +17,14 @@ const EditView: Component<Props> = () => {
 		brushStabilization: 10,
 	};
 	let state = new PaintState(config, 128, 128);
+	let modalSwitches = createModalSwitches();
 	return (
 		<div class="p-edit-view">
-			<PaintArea z={state} />
-			<ToolPanel z={state} />
+			<div class="p-paint-area">
+				<Canvas z={state} />
+			</div>
+			<ToolPanel z={state} sw={modalSwitches} />
+			<Modals switches={modalSwitches} z={state} />
 		</div>
 	);
 };

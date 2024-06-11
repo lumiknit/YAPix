@@ -1,6 +1,9 @@
 import { Component } from "solid-js";
 
+export type ModalPosition = "left" | "right" | "bottom" | "center";
+
 type Props = {
+	position: ModalPosition;
 	onClose: () => void;
 	children: any;
 };
@@ -12,8 +15,8 @@ export const ModalBase: Component<Props> = props => {
 		}
 	};
 	return (
-		<div class="pa-modal-ext" onClick={handleExtClick}>
-			<div class="modal-content">{props.children}</div>
+		<div class={"pa-modal-ext " + props.position} onClick={handleExtClick}>
+			<div class="pa-modal-content">{props.children}</div>
 		</div>
 	);
 };
