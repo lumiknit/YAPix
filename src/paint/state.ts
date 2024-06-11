@@ -7,11 +7,11 @@ import {
 	Boundary,
 	boundaryToRect,
 	Cursor,
-	Display,
 	DrawShape,
 	EMPTY_BOUNDARY,
 	ERASER_TYPE_TOOLS,
 	extendBoundaryByRect,
+	limitBoundaryToOriginRect,
 	ORIGIN,
 	Pos,
 	Rect,
@@ -188,6 +188,7 @@ export class PaintState {
 			hsv: [0, 0, 1],
 			history: [] as RGBA[],
 		});
+		this.useColor(this.palette().current);
 
 		[this.tool, this.setTool] = createSignal<ToolType>("brush");
 
@@ -299,7 +300,7 @@ export class PaintState {
 		this.setPalette(p => ({
 			current: color,
 			hsv: rgbToHSV([color[0], color[1], color[2]]),
-			history: [...p.history, p.current],
+			history: [...p.history, color],
 		}));
 	}
 
@@ -314,7 +315,28 @@ export class PaintState {
 			return {
 				current,
 				hsv: color,
-				history: [...p.history, p.current],
+				history: [...p.history, current],
+			};
+		});
+	}
+
+	/**
+	 * Change the current color from history.
+	 *
+	 * @param index The index of the history. If negative, it will be the index from the end.
+	 */
+	useColorFromHistory(index: number) {
+		this.setPalette(p => {
+			console.log("index", index, p.history.length);
+			if (index < 0) index = p.history.length + index;
+			if (index < 0 || index >= p.history.length) return p;
+			const color = p.history[index];
+			p.history.splice(index, 1);
+			p.history.push(color);
+			return {
+				current: color,
+				hsv: rgbToHSV([color[0], color[1], color[2]]),
+				history: p.history,
 			};
 		});
 	}
@@ -537,8 +559,8 @@ export class PaintState {
 			fy,
 			(x, y, l) => {
 				ctx.translate(x - lx, y - ly);
-				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
 				(lx = x), (ly = y);
+				ctx.fill(polygonTo4SegPath2D(this.brush().shape, l - 1, 0));
 				this.tempBd = extendBoundaryByRect(this.tempBd, {
 					x: x + brushRect.x,
 					y: y + brushRect.y,
@@ -548,8 +570,8 @@ export class PaintState {
 			},
 			(y, x, l) => {
 				ctx.translate(x - lx, y - ly);
-				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
 				(lx = x), (ly = y);
+				ctx.fill(polygonTo4SegPath2D(this.brush().shape, 0, l - 1));
 				this.tempBd = extendBoundaryByRect(this.tempBd, {
 					x: x + brushRect.x,
 					y: y + brushRect.y,
@@ -570,7 +592,9 @@ export class PaintState {
 		const tempCtx = this.getTempCtx();
 		const focusedCtx = this.focusedLayerRef?.getContext("2d")!;
 		// Extract the boundary
-		const rect = boundaryToRect(this.tempBd);
+		const bd = limitBoundaryToOriginRect(this.tempBd, this.size.w, this.size.h);
+		// Bound to the canvas
+		const rect = boundaryToRect(bd);
 		const oldImg = extractCanvasRect(focusedCtx, rect);
 
 		if (ERASER_TYPE_TOOLS.has(tool)) {
@@ -620,7 +644,12 @@ export class PaintState {
 		this.drawSingleBrush(x, y);
 	}
 
-	pointerUp() {
+	pointerUp(buttonDown: boolean) {
+		if (buttonDown) {
+			const pos = this.brushPos();
+			this.drawSingleBrush(Math.floor(pos.x), Math.floor(pos.y));
+		}
+
 		this.ptrState = undefined;
 		this.flushTempLayer();
 	}

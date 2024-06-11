@@ -39,33 +39,3 @@
 	font-weight: bold;
 	margin: 0;
 }
-
-.pa-color-picker {
-	& > .wheel {
-		margin: 1rem auto;
-		width: 100%;
-		max-width: 240px;
-		/* Same as width */
-		aspect-ratio: 1;
-	}
-}
-
-.pa-color-slider-line {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-
-	& .pa-color-slider {
-		overflow: hidden;
-		border-radius: 0.25em;
-		flex: 1;
-		height: 1em;
-	}
-
-	& input {
-		width: 4rem;
-		text-align: right;
-	}
-}

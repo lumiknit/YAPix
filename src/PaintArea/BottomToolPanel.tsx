@@ -1,22 +1,28 @@
 import { Component } from "solid-js";
-import { PaintState } from "../paint";
+import { DrawShape, PaintState, ToolType } from "../paint";
 import ToolButton from "./ToolButton";
 import {
 	TbArrowBackUp,
 	TbArrowBigDown,
 	TbArrowForwardUp,
+	TbArrowsHorizontal,
 	TbBoxMultiple,
 	TbBrush,
 	TbBucket,
 	TbCircle,
+	TbCircleFilled,
 	TbColorPicker,
 	TbEraser,
 	TbSelectAll,
 	TbSettings,
+	TbSquare,
+	TbWriting,
 } from "solid-icons/tb";
+import { IoSquare } from "solid-icons/io";
 import toast from "solid-toast";
 import { ModalSwitches } from "./modal/Modals";
 import { rgbaForStyle } from "../common/color";
+import { Dynamic } from "solid-js/web";
 
 type Props = {
 	z: PaintState;
@@ -24,6 +30,27 @@ type Props = {
 };
 
 const BottomToolPanel: Component<Props> = props => {
+	const handleToolChange = (tool: ToolType) => {
+		const currentTool = props.z.tool();
+		if (tool === currentTool) {
+			// Open the brush modal
+			props.sw.brush(true);
+		} else {
+			// Change the tool
+			props.z.useTool(tool);
+		}
+	};
+
+	const drawShapeIcon: { [key in DrawShape]: Component<any> } = {
+		free: TbWriting,
+		rect: TbSquare,
+		fillRect: IoSquare,
+		ellipse: TbCircle,
+		fillEllipse: TbCircleFilled,
+		line: TbArrowsHorizontal,
+		fill: TbBucket,
+	};
+
 	return (
 		<div class="p-tool-panel">
 			<div class="p-tool-row p-tr-util">
@@ -35,16 +62,17 @@ const BottomToolPanel: Component<Props> = props => {
 						"border-color": props.z.palette().hsv[2] > 0.5 ? "black" : "white",
 					}}
 				/>
-				<ToolButton onClick={() => props.sw.brush(true)}>
-					<TbBrush />
-				</ToolButton>
 				<ToolButton>
 					<TbSelectAll />
 				</ToolButton>
-				<ToolButton onClick={() => props.z.undo()}>
+				<ToolButton
+					onClick={() => props.z.undo()}
+					disabled={props.z.history.historySize()[0] <= 0}>
 					<TbArrowBackUp />
 				</ToolButton>
-				<ToolButton onClick={() => props.z.redo()}>
+				<ToolButton
+					onClick={() => props.z.redo()}
+					disabled={props.z.history.historySize()[1] <= 0}>
 					<TbArrowForwardUp />
 				</ToolButton>
 				<ToolButton onClick={() => props.sw.layers(true)}>
@@ -55,29 +83,21 @@ const BottomToolPanel: Component<Props> = props => {
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-draw">
-				<ToolButton> C </ToolButton>
 				<ToolButton>
 					<TbColorPicker />
 				</ToolButton>
 				<ToolButton
-					onClick={() => {
-						props.z.useTool("eraser");
-						toast.success("Eraser selected");
-					}}>
+					class={props.z.tool() === "eraser" ? "active" : ""}
+					onClick={() => handleToolChange("eraser")}>
 					<TbEraser />
 				</ToolButton>
 				<ToolButton
-					onClick={() => {
-						props.z.useTool("brush");
-						toast.success("Brush selected");
-					}}>
+					class={props.z.tool() === "brush" ? "active" : ""}
+					onClick={() => handleToolChange("brush")}>
 					<TbBrush />
 				</ToolButton>
 				<ToolButton>
-					<TbBucket />
-				</ToolButton>
-				<ToolButton>
-					<TbCircle />
+					<Dynamic component={drawShapeIcon[props.z.drawShape()]} />
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-dot">

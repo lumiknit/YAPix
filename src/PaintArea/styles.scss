@@ -15,7 +15,7 @@
 
 .p-tool-panel {
 	background-color: var(--c-bg);
-	border-top: 1px solid var(--c-fg-dim);
+	border-top: 1px solid var(--c-modal-bg);
 	padding: 0.25rem;
 }
 
@@ -30,7 +30,7 @@
 
 button.p-tool-btn {
 	background: none;
-	border: none;
+	border: 1px solid transparent;
 	border-radius: 0.5rem;
 	color: var(--c-fg);
 	cursor: pointer;
@@ -42,20 +42,34 @@ button.p-tool-btn {
 	-webkit-user-select: none;
 	-moz-user-select: none;
 
-	&:hover {
-		background: var(--c-tool-btn-hover);
+	&:not(:disabled) {
+		&:hover {
+			background: var(--c-tool-btn-hover);
+			border-color: var(--c-tool-btn-hover);
+		}
+
+		&:active {
+			background: var(--c-tool-btn-active);
+			border-color: var(--c-tool-btn-active);
+			color: var(--c-fg-bold);
+		}
+
+		&.active {
+			border-color: var(--c-tool-btn-active);
+			color: var(--c-fg-bold);
+		}
 	}
 
-	&:active,
-	&.active {
-		background: var(--c-tool-btn-active);
-		color: var(--c-fg-bold);
+	&:disabled {
+		cursor: default;
+		color: var(--c-fg-disabled);
 	}
 }
 
 button.p-dot-btn {
 	width: 90%;
-	padding: 1rem 1.5rem;
+	padding: 1.5rem;
+	color: var(--c-fg);
 	background: var(--c-prim);
 
 	display: flex;
@@ -65,10 +79,12 @@ button.p-dot-btn {
 	font-weight: bold;
 
 	&:hover {
+		color: var(--c-fg-bold);
 		background: var(--c-prim-dim);
 	}
 
 	&:active {
+		color: var(--c-fg-bold);
 		background: var(--c-prim-bold);
 	}
 }
@@ -78,21 +94,4 @@ button.p-dot-btn {
 	border-radius: 0.5rem;
 	width: 1.5em;
 	height: 1.5em;
-}
-
-/* -- Modal */
-.pa-m-color-picker {
-	margin: auto;
-	min-width: 10rem;
-	min-height: 10rem;
-
-	display: flex;
-	flex-direction: column;
-	justify-items: center;
-	align-items: center;
-
-	& > .wheel {
-		width: 200px;
-		height: 200px;
-	}
 }

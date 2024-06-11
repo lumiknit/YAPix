@@ -33,11 +33,11 @@ export const mountEvents = (
 
 	eventHandlers.pointerup = (e: PointerEvent) => {
 		const [x, y] = getPointerPos(e);
-		z.pointerUp();
+		z.pointerUp(true);
 	};
 
 	eventHandlers.pointerleave = (e: PointerEvent) => {
-		z.pointerUp();
+		z.pointerUp(false);
 	};
 
 	// Wheel

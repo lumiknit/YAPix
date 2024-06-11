@@ -1,4 +1,10 @@
-import { Component, onCleanup, onMount, splitProps } from "solid-js";
+import {
+	Component,
+	mergeProps,
+	onCleanup,
+	onMount,
+	splitProps,
+} from "solid-js";
 import { JSX } from "solid-js/jsx-runtime";
 
 type Props = {
@@ -6,25 +12,23 @@ type Props = {
 	onDeactive?: () => void;
 } & JSX.ButtonHTMLAttributes<HTMLButtonElement>;
 
-const ToolButton: Component<Props> = props => {
+const ToolButton: Component<Props> = _props => {
+	const props = mergeProps({ class: "" }, _props);
 	const [locals, divProps] = splitProps(props, ["class"]);
 
 	let ref: HTMLButtonElement;
 
 	const handlers = {
 		pointerdown: (e: PointerEvent) => {
-			console.log("down");
 			props.onActive?.();
 			e.preventDefault();
 			ref.setPointerCapture(e.pointerId);
 		},
 		pointerup: (e: PointerEvent) => {
-			console.log("up");
 			props.onDeactive?.();
 			ref.releasePointerCapture(e.pointerId);
 		},
 		pointerleave: (e: PointerEvent) => {
-			console.log("leave");
 			props.onDeactive?.();
 			ref.releasePointerCapture(e.pointerId);
 		},

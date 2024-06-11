@@ -21,6 +21,7 @@
 	--c-bg: #ddd;
 	--c-fg: #444;
 	--c-fg-dim: #888;
+	--c-fg-disabled: #aaa;
 	--c-fg-bold: #000;
 
 	--c-prim: #76cd5c;
@@ -38,6 +39,7 @@
 		--c-bg: #333;
 		--c-fg: #ddd;
 		--c-fg-dim: #888;
+		--c-fg-disabled: #666;
 		--c-fg-bold: #fff;
 
 		--c-prim: #3b7d26;

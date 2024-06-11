@@ -1,4 +1,6 @@
-import { Action } from "./actions";
+import { Accessor, Setter, createSignal } from "solid-js";
+
+type HistorySize = [number, number]; // [back, forward]
 
 export class HistoryManager<A> {
 	/** Maximum size of history. */
@@ -13,6 +15,12 @@ export class HistoryManager<A> {
 	/** Futures, which are stacked by redo. */
 	futures: A[][] = [];
 
+	/** History Size Signal, for UI */
+	historySize: Accessor<HistorySize>;
+
+	/** History Size signal setter */
+	setHistorySize: Setter<HistorySize>;
+
 	/** Action execution */
 	onExec: (a: A) => void | A;
 	/** Revert callback */
@@ -26,6 +34,8 @@ export class HistoryManager<A> {
 		this.maxHistory = maxHistory;
 		this.onRevert = revert;
 		this.onExec = exec;
+
+		[this.historySize, this.setHistorySize] = createSignal([0, 0]);
 	}
 
 	/**
@@ -37,6 +47,7 @@ export class HistoryManager<A> {
 			this.history.splice(0, this.history.length - this.maxHistory);
 		}
 		this.futures = [];
+		this.setHistorySize([this.history.length, 0]);
 	}
 
 	/**
@@ -51,6 +62,7 @@ export class HistoryManager<A> {
 		this.push(converted);
 		this.history.push(converted);
 		this.futures = [];
+		this.setHistorySize([this.history.length, 0]);
 	}
 
 	/**
@@ -66,6 +78,8 @@ export class HistoryManager<A> {
 		}
 
 		this.futures.push(actions);
+
+		this.setHistorySize([this.history.length, this.futures.length]);
 		return true;
 	}
 
@@ -84,6 +98,7 @@ export class HistoryManager<A> {
 
 		this.history.push(converted);
 
+		this.setHistorySize([this.history.length, this.futures.length]);
 		return true;
 	}
 }

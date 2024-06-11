@@ -1,4 +1,4 @@
-import { Component, createSignal } from "solid-js";
+import { Component, For, Index, createMemo, createSignal } from "solid-js";
 import {
 	HSV,
 	HSVSliderH,
@@ -10,10 +10,12 @@ import {
 	RGBSliderR,
 	hsvToRGB,
 	hsvToStyle,
-	rgbToStyle,
+	rgbToHSV,
 } from "solid-tiny-color";
 import { PaintState } from "../../paint";
-import { rgbaForStyle } from "../../common/color";
+import { RGBA, rgbaForStyle } from "../../common/color";
+
+import "./PaletteModal.scss";
 
 type Props = {
 	z: PaintState;
@@ -21,6 +23,13 @@ type Props = {
 
 const PaletteModal: Component<Props> = props => {
 	const palette = () => props.z.palette();
+
+	const reversedPaletteHistory = createMemo(() => {
+		const palette = props.z.palette();
+		const history = [...palette.history];
+		history.reverse();
+		return history;
+	});
 
 	let updateTimeout: undefined | number;
 	let newColor = palette().hsv;
@@ -30,12 +39,13 @@ const PaletteModal: Component<Props> = props => {
 		setC(color);
 		newColor = color;
 		// Delayed set
-		if (updateTimeout === undefined) {
-			updateTimeout = setTimeout(() => {
-				props.z.useColorHSV(newColor);
-				updateTimeout = undefined;
-			}, 100);
+		if (updateTimeout !== undefined) {
+			clearTimeout(updateTimeout);
 		}
+		updateTimeout = setTimeout(() => {
+			props.z.useColorHSV(newColor);
+			updateTimeout = undefined;
+		}, 500);
 	};
 
 	const hexRGB = () => {
@@ -43,6 +53,11 @@ const PaletteModal: Component<Props> = props => {
 		return (
 			"#" + rgb.map(v => Math.floor(v).toString(16).padStart(2, "0")).join("")
 		);
+	};
+
+	const useColorFromHistory = (reversedIdx: number, color: RGBA) => {
+		setC(rgbToHSV([color[0], color[1], color[2]]));
+		props.z.useColorFromHistory(-1 - reversedIdx);
 	};
 
 	return (
@@ -115,6 +130,21 @@ const PaletteModal: Component<Props> = props => {
 					<span> Hex RGB </span>
 					<input type="text" value={hexRGB()} readonly />
 				</div>
+			</div>
+			<hr />
+			<div> Last Used Colors </div>
+			<div class="pa-palette">
+				<Index each={reversedPaletteHistory()}>
+					{(c, idx) => (
+						<div
+							class="pa-palette-color"
+							style={{
+								background: rgbaForStyle(c()),
+							}}
+							onClick={() => useColorFromHistory(idx, c())}
+						/>
+					)}
+				</Index>
 			</div>
 		</>
 	);
