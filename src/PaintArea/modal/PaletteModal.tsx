@@ -1,5 +1,17 @@
 import { Component, createSignal } from "solid-js";
-import { HSV, HSVWheel, hsvToRGB, hsvToStyle } from "solid-tiny-color";
+import {
+	HSV,
+	HSVSliderH,
+	HSVSliderS,
+	HSVSliderV,
+	HSVWheel,
+	RGBSliderB,
+	RGBSliderG,
+	RGBSliderR,
+	hsvToRGB,
+	hsvToStyle,
+	rgbToStyle,
+} from "solid-tiny-color";
 import { PaintState } from "../../paint";
 import { rgbaForStyle } from "../../common/color";
 
@@ -25,6 +37,14 @@ const PaletteModal: Component<Props> = props => {
 			}, 100);
 		}
 	};
+
+	const hexRGB = () => {
+		const rgb = hsvToRGB(c());
+		return (
+			"#" + rgb.map(v => Math.floor(v).toString(16).padStart(2, "0")).join("")
+		);
+	};
+
 	return (
 		<>
 			<div class="pa-modal-title">
@@ -50,6 +70,51 @@ const PaletteModal: Component<Props> = props => {
 					strokeWidth={0.25}
 					rotate
 				/>
+			</div>
+			<hr />
+			<div class="pa-color-sliders">
+				<div> RGB </div>
+				<div class="pa-color-slider-line">
+					<span>R:</span>
+					<RGBSliderR class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(hsvToRGB(c())[0])} readonly />
+				</div>
+				<div class="pa-color-slider-line">
+					<span>G:</span>
+					<RGBSliderG class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(hsvToRGB(c())[1])} readonly />
+				</div>
+				<div class="pa-color-slider-line">
+					<span>B:</span>
+					<RGBSliderB class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(hsvToRGB(c())[2])} readonly />
+				</div>
+			</div>
+			<hr />
+			<div class="pa-color-sliders">
+				<div> HSV </div>
+				<div class="pa-color-slider-line">
+					<span>H:</span>
+					<HSVSliderH class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(c()[0])} readonly />
+				</div>
+				<div class="pa-color-slider-line">
+					<span>S:</span>
+					<HSVSliderS class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(c()[1] * 100)} readonly />
+				</div>
+				<div class="pa-color-slider-line">
+					<span>V:</span>
+					<HSVSliderV class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
+					<input type="text" value={Math.floor(c()[2] * 100)} readonly />
+				</div>
+			</div>
+			<hr />
+			<div class="pa-color-value">
+				<div class="pa-color-slider-line">
+					<span> Hex RGB </span>
+					<input type="text" value={hexRGB()} readonly />
+				</div>
 			</div>
 		</>
 	);

@@ -18,7 +18,7 @@
 }
 
 :root {
-	--c-bg: #fff;
+	--c-bg: #ddd;
 	--c-fg: #444;
 	--c-fg-dim: #888;
 	--c-fg-bold: #000;
@@ -35,7 +35,7 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--c-bg: #000;
+		--c-bg: #333;
 		--c-fg: #ddd;
 		--c-fg-dim: #888;
 		--c-fg-bold: #fff;
@@ -46,8 +46,8 @@
 
 		--c-modal-bg: #444;
 
-		--c-tool-btn-hover: #444;
-		--c-tool-btn-active: #666;
+		--c-tool-btn-hover: #777;
+		--c-tool-btn-active: #888;
 	}
 }
 

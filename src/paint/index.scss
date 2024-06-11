@@ -4,6 +4,7 @@
 	inset: 0;
 
 	touch-action: none;
+	cursor: none;
 
 	user-select: none;
 	-webkit-user-drag: none;
@@ -31,9 +32,10 @@
 	width: 1px;
 	height: 1px;
 	background: none;
-	border: 1px solid white;
+	border: 1px solid #0f0;
 	outline: 1px solid black;
 	border-radius: 50%;
+	mix-blend-mode: difference;
 }
 
 .cv-cursor {

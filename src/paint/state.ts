@@ -78,11 +78,17 @@ export class PaintState {
 	/** History Manager */
 	history: HistoryManager<Action>;
 
-	/** Display state */
-	display: Accessor<Display>;
+	/** Displayed canvas offset */
+	scroll: Accessor<Pos>;
 
-	/** Display state setter */
-	setDisplay: Setter<Display>;
+	/** Displayed canvas offset setter */
+	setScroll: Setter<Pos>;
+
+	/** Displayed canvas zoom */
+	zoom: Accessor<number>;
+
+	/** Displayed canvas zoom setter */
+	setZoom: Setter<number>;
 
 	/** Cursor */
 	cursor: Accessor<Cursor>;
@@ -169,11 +175,8 @@ export class PaintState {
 
 		this.focusedLayer = 0;
 
-		[this.display, this.setDisplay] = createSignal({
-			x: 0,
-			y: 0,
-			zoom: 8,
-		});
+		[this.scroll, this.setScroll] = createSignal({ ...ORIGIN });
+		[this.zoom, this.setZoom] = createSignal(8);
 
 		[this.cursor, this.setCursor] = createSignal({
 			real: ORIGIN,
@@ -318,8 +321,9 @@ export class PaintState {
 
 	/** invertTransform */
 	invertTransform(x: number, y: number): [number, number] {
-		const d = this.display();
-		return [(x - d.x) / d.zoom, (y - d.y) / d.zoom];
+		const d = this.scroll();
+		const z = this.zoom();
+		return [(x - d.x) / z, (y - d.y) / z];
 	}
 
 	// --- Cursor Methods

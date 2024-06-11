@@ -1,4 +1,4 @@
-import { Component, onMount, onCleanup, JSX } from "solid-js";
+import { Component, onMount, onCleanup, JSX, createMemo } from "solid-js";
 
 import { PaintState } from "./state";
 
@@ -34,15 +34,20 @@ const Canvas: Component<Props> = props => {
 		x: number,
 		y: number,
 	): JSX.CSSProperties => {
-		const d = props.z.display();
+		const zoom = props.z.zoom();
 		return {
 			"z-index": `${zIndex}`,
 			top: `${x}px`,
 			left: `${y}px`,
-			width: `${props.z.size.w * d.zoom}px`,
-			height: `${props.z.size.h * d.zoom}px`,
+			width: `${props.z.size.w * zoom}px`,
+			height: `${props.z.size.h * zoom}px`,
 		};
 	};
+
+	const canvasTransform = createMemo(() => {
+		const d = props.z.scroll();
+		return `translate(${d.x}px, ${d.y}px)`;
+	});
 
 	return (
 		<div ref={rootRef!} class="cv-root">
@@ -53,7 +58,7 @@ const Canvas: Component<Props> = props => {
 				style={
 					// DO NOT USE scale in tranform, because the canvas looks blurry in safari.
 					{
-						transform: `translate(${props.z.display().x}px, ${props.z.display().y}px)`,
+						transform: canvasTransform(),
 					}
 				}>
 				<canvas

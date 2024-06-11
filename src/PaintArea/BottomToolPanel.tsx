@@ -47,7 +47,7 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton onClick={() => props.z.redo()}>
 					<TbArrowForwardUp />
 				</ToolButton>
-				<ToolButton>
+				<ToolButton onClick={() => props.sw.layers(true)}>
 					<TbBoxMultiple />
 				</ToolButton>
 				<ToolButton onClick={() => props.sw.settings(true)}>

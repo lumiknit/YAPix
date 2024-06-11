@@ -4,6 +4,7 @@ import { PaintState } from "../../paint";
 import PaletteModal from "./PaletteModal";
 import BrushModal from "./BrushModal";
 import SettingsModal from "./SettingsModal";
+import LayersModal from "./LayersModal";
 
 /**
  * Create a switch for a modal that can be shown or hidden.
@@ -37,12 +38,14 @@ export const createModalSwitch = (
 export type ModalSwitches = {
 	palette: ModalSwitch;
 	brush: ModalSwitch;
+	layers: ModalSwitch;
 	settings: ModalSwitch;
 };
 
 export const createModalSwitches = (): ModalSwitches => ({
 	palette: createModalSwitch("left"),
 	brush: createModalSwitch("left"),
+	layers: createModalSwitch("right"),
 	settings: createModalSwitch("right"),
 });
 
@@ -66,6 +69,13 @@ export const Modals: Component<Props> = props => {
 					position={props.switches.brush() as any}
 					onClose={() => props.switches.brush(false)}>
 					<BrushModal z={props.z} />
+				</ModalBase>
+			</Show>
+			<Show when={props.switches.layers()}>
+				<ModalBase
+					position={props.switches.layers() as any}
+					onClose={() => props.switches.layers(false)}>
+					<LayersModal z={props.z} />
 				</ModalBase>
 			</Show>
 			<Show when={props.switches.settings()}>

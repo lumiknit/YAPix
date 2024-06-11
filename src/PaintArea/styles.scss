@@ -15,6 +15,8 @@
 
 .p-tool-panel {
 	background-color: var(--c-bg);
+	border-top: 1px solid var(--c-fg-dim);
+	padding: 0.25rem;
 }
 
 /* Tool Panel */
@@ -55,6 +57,12 @@ button.p-dot-btn {
 	width: 90%;
 	padding: 1rem 1.5rem;
 	background: var(--c-prim);
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	font-weight: bold;
 
 	&:hover {
 		background: var(--c-prim-dim);

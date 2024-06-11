@@ -10,6 +10,9 @@
 	inset: 0;
 	padding: 1rem;
 
+	touch-action: none;
+	user-select: none;
+
 	&.left {
 		justify-content: start;
 	}
@@ -22,12 +25,13 @@
 .pa-modal-content {
 	color: var(--c-fg);
 	background-color: var(--c-modal-bg);
-	box-shadow: 0 0 1rem 0.25rem #0004;
+	box-shadow: 0 0 0.5rem 0.25rem #0002;
 	border-radius: 0.5rem;
 	width: 480px;
 	max-width: 75%;
 	max-height: 75%;
 	padding: 1rem;
+	overflow-y: scroll;
 }
 
 .pa-modal-title {
@@ -43,5 +47,25 @@
 		max-width: 240px;
 		/* Same as width */
 		aspect-ratio: 1;
+	}
+}
+
+.pa-color-slider-line {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+
+	& .pa-color-slider {
+		overflow: hidden;
+		border-radius: 0.25em;
+		flex: 1;
+		height: 1em;
+	}
+
+	& input {
+		width: 4rem;
+		text-align: right;
 	}
 }

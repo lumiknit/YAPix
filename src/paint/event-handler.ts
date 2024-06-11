@@ -1,3 +1,4 @@
+import { batch } from "solid-js";
 import { PaintState } from ".";
 
 export type EventBindInfo = {
@@ -42,17 +43,18 @@ export const mountEvents = (
 	// Wheel
 	eventHandlers.wheel = (e: WheelEvent) => {
 		if (e.ctrlKey || e.metaKey) {
-			z.setDisplay(d => {
+			batch(() => {
+				const d = z.scroll();
+				const oldZoom = z.zoom();
 				const bc = z.cursor().brush;
-				const oldZoom = d.zoom;
 				const zoom = oldZoom * Math.max(0.001, 1 - e.deltaY / 100);
 				const x = d.x - bc.x * (zoom - oldZoom);
 				const y = d.y - bc.y * (zoom - oldZoom);
-				return { x, y, zoom };
+				z.setScroll({ x, y });
+				z.setZoom(zoom);
 			});
 		} else {
-			z.setDisplay(d => ({
-				...d,
+			z.setScroll(d => ({
 				x: d.x - e.deltaX,
 				y: d.y - e.deltaY,
 			}));

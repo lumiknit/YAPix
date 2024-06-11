@@ -1,4 +1,4 @@
-import { Component } from "solid-js";
+import { Component, createEffect, createMemo } from "solid-js";
 import { PaintState } from "./state";
 import { polygonToSVG } from "./polygon";
 import { boundaryToRect } from ".";
@@ -8,39 +8,46 @@ type Props = {
 };
 
 const Cursor: Component<Props> = props => {
-	const z = () => Math.floor(props.z.display().zoom);
-	const iz = () => 1 / Math.floor(props.z.display().zoom);
-	const strokeWidth = () => {
-		const d = props.z.display();
-		return d.zoom > 4 ? 2 : 1;
-	};
-	const rx = () => {
-		const d = props.z.display();
-		return Math.floor(d.x + d.zoom * props.z.cursor().real.x);
-	};
-	const ry = () => {
-		const d = props.z.display();
-		return Math.floor(d.y + d.zoom * props.z.cursor().real.y);
-	};
-	const brushCursorTransform = () => {
+	const z = () => props.z.zoom();
+	const iz = () => 1 / props.z.zoom();
+	const strokeWidth = createMemo(() => {
+		const zoom = props.z.zoom();
+		return zoom > 16 ? 4 : zoom > 8 ? 2 : 1;
+	});
+	const brushCursorSVGTransform = createMemo(() => {
+		const sw = strokeWidth() / 2;
+		return `translate(-${sw}px, -${sw}px)`;
+	});
+	const rx = createMemo(() => {
+		const d = props.z.scroll();
+		const zoom = props.z.zoom();
+		return Math.floor(d.x + zoom * props.z.cursor().real.x);
+	});
+	const ry = createMemo(() => {
+		const d = props.z.scroll();
+		const zoom = props.z.zoom();
+		return Math.floor(d.y + zoom * props.z.cursor().real.y);
+	});
+	const brushCursorTransform = createMemo(() => {
 		const pos = props.z.brushCursorPos();
-		const d = props.z.display();
-		return `translate(${Math.floor(d.x + d.zoom * pos.x)}px, ${Math.floor(d.y + d.zoom * pos.y)}px)`;
-	};
-	const brushW = () => {
+		const d = props.z.scroll();
+		const zoom = props.z.zoom();
+		return `translate(${Math.floor(d.x + zoom * pos.x)}px, ${Math.floor(d.y + zoom * pos.y)}px)`;
+	});
+	const brushW = createMemo(() => {
 		const bd = props.z.brush().shape.bd;
 		return bd.r - bd.l;
-	};
-	const brushH = () => {
+	});
+	const brushH = createMemo(() => {
 		const bd = props.z.brush().shape.bd;
 		return bd.b - bd.t;
-	};
+	});
 
-	const viewBox = () => {
+	const viewBox = createMemo(() => {
 		const r = boundaryToRect(props.z.brush().shape.bd);
-		const sw = strokeWidth() * iz();
+		const sw = (strokeWidth() * iz()) / 2;
 		return `${r.x - sw} ${r.y - sw} ${r.w + 2 * sw} ${r.h + 2 * sw}`;
-	};
+	});
 
 	return (
 		<>
@@ -56,14 +63,15 @@ const Cursor: Component<Props> = props => {
 				style={{
 					transform: brushCursorTransform(),
 					"z-index": 2,
+					"mix-blend-mode": "difference",
 				}}>
 				<svg
 					width={2 * strokeWidth() + z() * brushW()}
 					height={2 * strokeWidth() + z() * brushH()}
 					viewBox={viewBox()}
 					style={{
-						transform: `translate(-1px, -1px)`,
-						stroke: "green",
+						transform: brushCursorSVGTransform(),
+						stroke: "white",
 						"stroke-width": `${strokeWidth() * iz()}px`,
 						fill: "none",
 					}}>
