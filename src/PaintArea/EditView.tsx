@@ -6,9 +6,7 @@ import ToolPanel from "./BottomToolPanel";
 
 import "./styles.scss";
 import { PaintConfig } from "../paint/config";
-import ModalBase from "./modal/ModalBase";
-import PaletteModal from "./modal/PaletteModal";
-import { Modals, createModalSwitches } from "./modal/Modals";
+import Modals, { createModalSwitches } from "./modal/Modals";
 
 type Props = {};
 

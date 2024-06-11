@@ -5,24 +5,17 @@ import {
 	TbArrowBackUp,
 	TbArrowBigDown,
 	TbArrowForwardUp,
-	TbArrowsHorizontal,
 	TbBoxMultiple,
 	TbBrush,
-	TbBucket,
-	TbCircle,
-	TbCircleFilled,
 	TbColorPicker,
 	TbEraser,
 	TbSelectAll,
 	TbSettings,
-	TbSquare,
-	TbWriting,
 } from "solid-icons/tb";
-import { IoSquare } from "solid-icons/io";
-import toast from "solid-toast";
-import { ModalSwitches } from "./modal/Modals";
+import { ModalSwitches, ModalTypes } from "./modal/Modals";
 import { rgbaForStyle } from "../common/color";
 import { Dynamic } from "solid-js/web";
+import { DRAW_SHAPE_ICON } from "./draw-shape";
 
 type Props = {
 	z: PaintState;
@@ -41,14 +34,8 @@ const BottomToolPanel: Component<Props> = props => {
 		}
 	};
 
-	const drawShapeIcon: { [key in DrawShape]: Component<any> } = {
-		free: TbWriting,
-		rect: TbSquare,
-		fillRect: IoSquare,
-		ellipse: TbCircle,
-		fillEllipse: TbCircleFilled,
-		line: TbArrowsHorizontal,
-		fill: TbBucket,
+	const openModalHandler = (type: ModalTypes) => () => {
+		props.sw[type](true);
 	};
 
 	return (
@@ -56,7 +43,7 @@ const BottomToolPanel: Component<Props> = props => {
 			<div class="p-tool-row p-tr-util">
 				<div
 					class="p-tool-color-preview"
-					onClick={() => props.sw.palette(true)}
+					onClick={openModalHandler("palette")}
 					style={{
 						background: rgbaForStyle(props.z.palette().current),
 						"border-color": props.z.palette().hsv[2] > 0.5 ? "black" : "white",
@@ -75,10 +62,10 @@ const BottomToolPanel: Component<Props> = props => {
 					disabled={props.z.history.historySize()[1] <= 0}>
 					<TbArrowForwardUp />
 				</ToolButton>
-				<ToolButton onClick={() => props.sw.layers(true)}>
+				<ToolButton onClick={openModalHandler("layers")}>
 					<TbBoxMultiple />
 				</ToolButton>
-				<ToolButton onClick={() => props.sw.settings(true)}>
+				<ToolButton onClick={openModalHandler("settings")}>
 					<TbSettings />
 				</ToolButton>
 			</div>
@@ -96,8 +83,8 @@ const BottomToolPanel: Component<Props> = props => {
 					onClick={() => handleToolChange("brush")}>
 					<TbBrush />
 				</ToolButton>
-				<ToolButton>
-					<Dynamic component={drawShapeIcon[props.z.drawShape()]} />
+				<ToolButton onClick={openModalHandler("drawShape")}>
+					<Dynamic component={DRAW_SHAPE_ICON[props.z.drawShape()]} />
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-dot">

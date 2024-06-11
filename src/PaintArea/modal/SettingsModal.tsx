@@ -10,6 +10,15 @@ const SettingsModal: Component<Props> = props => {
 		<>
 			<div class="pa-modal-title">Settings / Files</div>
 
+			<div> Other </div>
+
+			<button
+				onClick={() => {
+					props.z.fitCanvasToRoot();
+				}}>
+				Reset Zoom
+			</button>
+
 			<div> Files </div>
 
 			<button

@@ -133,6 +133,9 @@ export class PaintState {
 
 	// Canvas Refs
 
+	/** Root ref */
+	rootRef?: HTMLDivElement;
+
 	/** Main layer canvas ref */
 	focusedLayerRef?: HTMLCanvasElement;
 
@@ -206,6 +209,7 @@ export class PaintState {
 
 	init() {
 		this.renderBlurredLayer();
+		this.fitCanvasToRoot();
 	}
 
 	// -- Layers
@@ -338,6 +342,26 @@ export class PaintState {
 				hsv: rgbToHSV([color[0], color[1], color[2]]),
 				history: p.history,
 			};
+		});
+	}
+
+	// -- Display
+
+	/** Update scroll and zoom to fit the canvas to the root div. */
+	fitCanvasToRoot() {
+		const root = this.rootRef!;
+		// Get the size
+		const w = root.offsetWidth;
+		const h = root.offsetHeight;
+		// Calculate the zoom
+		const zoom = Math.min(w / this.size.w, h / this.size.h) * 0.95;
+		// Calculate the scroll
+		const x = (w - this.size.w * zoom) / 2;
+		const y = (h - this.size.h * zoom) / 2;
+		// Set the values
+		batch(() => {
+			this.setZoom(zoom);
+			this.setScroll({ x, y });
 		});
 	}
 

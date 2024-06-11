@@ -6,6 +6,7 @@ import BrushModal from "./BrushModal";
 import SettingsModal from "./SettingsModal";
 import LayersModal from "./LayersModal";
 import { Dynamic } from "solid-js/web";
+import DrawShapeModal from "./DrawShapeModal";
 
 /**
  * Create a switch for a modal that can be shown or hidden.
@@ -36,7 +37,12 @@ export const createModalSwitch = (
 	};
 };
 
-export type ModalTypes = "palette" | "brush" | "layers" | "settings";
+export type ModalTypes =
+	| "palette"
+	| "brush"
+	| "drawShape"
+	| "layers"
+	| "settings";
 export const MODAL_INFO: {
 	type: ModalTypes;
 	position: ModalPosition;
@@ -51,6 +57,11 @@ export const MODAL_INFO: {
 		type: "brush",
 		position: "left",
 		component: BrushModal,
+	},
+	{
+		type: "drawShape",
+		position: "left",
+		component: DrawShapeModal,
 	},
 	{
 		type: "layers",
@@ -81,7 +92,7 @@ type Props = {
 	switches: ModalSwitches;
 };
 
-export const Modals: Component<Props> = props => {
+const Modals: Component<Props> = props => {
 	return (
 		<For each={MODAL_INFO}>
 			{m => (
@@ -96,3 +107,5 @@ export const Modals: Component<Props> = props => {
 		</For>
 	);
 };
+
+export default Modals;

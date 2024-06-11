@@ -11,14 +11,12 @@ type Props = {
 };
 
 const Canvas: Component<Props> = props => {
-	let rootRef: HTMLDivElement;
-
 	// Set main loop
 	let ebi: EventBindInfo | undefined;
 	let mainLoop: number = 0;
 	onMount(() => {
 		props.z.init();
-		ebi = mountEvents(props.z, rootRef);
+		ebi = mountEvents(props.z, props.z.rootRef!);
 		mainLoop = setInterval(
 			() => props.z.step(),
 			1000 / (props.z.config().fps || 60),
@@ -50,7 +48,7 @@ const Canvas: Component<Props> = props => {
 	});
 
 	return (
-		<div ref={rootRef!} class="cv-root">
+		<div ref={props.z.rootRef} class="cv-root">
 			<Cursor z={props.z} />
 			<div
 				tabIndex={-1}
