@@ -1,7 +1,8 @@
 import { Accessor, batch, createSignal, Setter } from "solid-js";
 import { HSV, hsvToRGB, rgbToHSV, rgbToStyle } from "solid-tiny-color";
+import toast from "solid-toast";
 
-import { rgba, RGBA, rgbaForStyle,
+import {
 	Boundary,
 	boundaryToRect,
 	EMPTY_BOUNDARY,
@@ -10,16 +11,17 @@ import { rgba, RGBA, rgbaForStyle,
 	ORIGIN,
 	Pos,
 	Rect,
+	rgba,
+	RGBA,
+	rgbaForStyle,
 	Size,
-} from "../common";
+} from "@/common";
 
-import { Layer, createEmptyLayer, drawLayerToCanvas } from "./layer";
-import {
-	Cursor,
-	DrawShape,
-	ERASER_TYPE_TOOLS,
-	ToolType,
-} from "./types";
+import { emptyCanvasContext, extractCanvasRect, putContextToContext } from ".";
+import { HistoryManager } from "./action-history";
+import { Action, UpdateImgAction } from "./actions";
+import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
+import { createEmptyLayer, drawLayerToCanvas, Layer } from "./layer";
 import {
 	drawLineWithCallbacks,
 	ellipsePolygon,
@@ -28,11 +30,7 @@ import {
 	polygonToPath2D,
 	rectanglePolygon,
 } from "./polygon";
-import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
-import { HistoryManager } from "./action-history";
-import { Action, UpdateImgAction } from "./actions";
-import toast from "solid-toast";
-import { emptyCanvasContext, extractCanvasRect, putContextToContext } from ".";
+import { Cursor, DrawShape, ERASER_TYPE_TOOLS, ToolType } from "./types";
 
 export type Brush = {
 	/** Brush shape */

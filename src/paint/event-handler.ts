@@ -1,6 +1,8 @@
 import { batch } from "solid-js";
+
+import { Pos } from "@/common";
+
 import { PaintState } from ".";
-import { Pos } from "../common";
 
 const MOVE_THRESHOLD = 6,
 	DOUBLE_CLICK_TIME = 250,
@@ -17,7 +19,8 @@ type Pointer = {
 	// Current position
 	moved: boolean;
 	timestamp: number;
-} & WithPointerID & Pos;
+} & WithPointerID &
+	Pos;
 
 type LongPress = {
 	id: PointerID;
@@ -38,10 +41,6 @@ export type PointerEventState = {
 	maxPointers: number;
 	lastClick: LastClick;
 };
-
-
-
-
 
 export type EventBindInfo = {
 	target: HTMLElement;

@@ -1,7 +1,9 @@
 import { Component, For, createSignal } from "solid-js";
-import { DrawShape, PaintState } from "../../paint";
-import { DRAW_SHAPE_ICON } from "../draw-shape";
 import { Dynamic } from "solid-js/web";
+
+import { DrawShape, PaintState } from "@/paint";
+
+import { DRAW_SHAPE_ICON } from "../draw-shape";
 
 type Props = {
 	z: PaintState;

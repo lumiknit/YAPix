@@ -1,4 +1,4 @@
-import { Rect } from "./types";
+import { Rect } from "@/common";
 
 /** Create empty canvas 2d context */
 export const emptyCanvasContext = (

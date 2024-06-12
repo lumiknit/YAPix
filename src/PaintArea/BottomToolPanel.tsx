@@ -1,6 +1,8 @@
 import { Component } from "solid-js";
-import { DrawShape, PaintState, ToolType } from "../paint";
-import ToolButton from "./ToolButton";
+import { Dynamic } from "solid-js/web";
+
+import { rgbaForStyle } from "@/common";
+
 import {
 	TbArrowBackUp,
 	TbArrowBigDown,
@@ -12,10 +14,10 @@ import {
 	TbSelectAll,
 	TbSettings,
 } from "solid-icons/tb";
-import { ModalSwitches, ModalTypes } from "./modal/Modals";
-import { rgbaForStyle } from "../common/color";
-import { Dynamic } from "solid-js/web";
+import { PaintState, ToolType } from "../paint";
+import ToolButton from "./ToolButton";
 import { DRAW_SHAPE_ICON } from "./draw-shape";
+import { ModalSwitches, ModalTypes } from "./modal/Modals";
 
 type Props = {
 	z: PaintState;

@@ -1,4 +1,5 @@
-import { Pos, Rect, ORIGIN } from ".";
+import { Pos, ORIGIN } from "@/common";
+
 import { emptyCanvasContext, putContextToContext } from "./utils";
 
 /** Layer data except image data */

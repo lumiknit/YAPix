@@ -3,8 +3,9 @@
  * @description The module contains available actions, and types for edit history.
  */
 
+import { Rect } from "@/common";
+
 import { Layer } from ".";
-import { Rect } from "./types";
 
 // -- Painting actions
 

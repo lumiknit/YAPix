@@ -1,5 +1,6 @@
 import { Component, createSignal } from "solid-js";
-import { PaintState } from "../../paint";
+
+import { PaintState } from "@/paint";
 
 type Props = {
 	z: PaintState;

@@ -3,7 +3,7 @@
  * @description This module provide 'polygon' which can be used to draw on canvas or export to svg.
  */
 
-import { Boundary, extendBoundaryByRadius, extendBoundaryByRect } from ".";
+import { Boundary, extendBoundaryByRadius } from "@/common";
 
 export type Polygon = {
 	points: [number, number][];

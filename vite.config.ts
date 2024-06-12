@@ -10,4 +10,7 @@ export default defineConfig({
 		port: 7981,
 	},
 	plugins: [solid()],
+	resolve: {
+		alias: [{ find: "@", replacement: "/src" }],
+	},
 });

@@ -5,7 +5,9 @@ export type Modifiers = {
 	meta: boolean;
 };
 
-export const getModifiers = (e: PointerEvent | MouseEvent | KeyboardEvent): Modifiers => ({
+export const getModifiers = (
+	e: PointerEvent | MouseEvent | KeyboardEvent,
+): Modifiers => ({
 	shift: e.shiftKey,
 	ctrl: e.ctrlKey,
 	alt: e.altKey,
@@ -18,4 +20,4 @@ export const modifiersToString = (modifiers: Modifiers): string => {
 	if (modifiers.alt) keys.push("A-");
 	if (modifiers.shift) keys.push("S-");
 	return keys.join();
-}
+};

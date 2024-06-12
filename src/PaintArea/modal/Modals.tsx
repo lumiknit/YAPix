@@ -1,12 +1,14 @@
 import { Accessor, Component, For, Setter, Show, createSignal } from "solid-js";
-import ModalBase, { ModalPosition } from "./ModalBase";
-import { PaintState } from "../../paint";
-import PaletteModal from "./PaletteModal";
-import BrushModal from "./BrushModal";
-import SettingsModal from "./SettingsModal";
-import LayersModal from "./LayersModal";
 import { Dynamic } from "solid-js/web";
+
+import { PaintState } from "@/paint";
+
+import BrushModal from "./BrushModal";
 import DrawShapeModal from "./DrawShapeModal";
+import LayersModal from "./LayersModal";
+import ModalBase, { ModalPosition } from "./ModalBase";
+import PaletteModal from "./PaletteModal";
+import SettingsModal from "./SettingsModal";
 
 /**
  * Create a switch for a modal that can be shown or hidden.

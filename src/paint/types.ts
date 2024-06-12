@@ -1,4 +1,4 @@
-import { Pos } from "../common";
+import { Pos } from "@/common";
 
 /** Cursor */
 export type Cursor = {

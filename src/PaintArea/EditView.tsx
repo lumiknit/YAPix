@@ -1,12 +1,12 @@
 import { Component } from "solid-js";
 
-import { Canvas, PaintState } from "../paint";
+import { Canvas, PaintState } from "@/paint";
+import { PaintConfig } from "@/paint/config";
 
 import ToolPanel from "./BottomToolPanel";
+import Modals, { createModalSwitches } from "./modal/Modals";
 
 import "./styles.scss";
-import { PaintConfig } from "../paint/config";
-import Modals, { createModalSwitches } from "./modal/Modals";
 
 type Props = {};
 

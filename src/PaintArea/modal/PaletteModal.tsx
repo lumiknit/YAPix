@@ -1,4 +1,4 @@
-import { Component, For, Index, createMemo, createSignal } from "solid-js";
+import { Component, Index, createMemo, createSignal } from "solid-js";
 import {
 	HSV,
 	HSVSliderH,
@@ -12,8 +12,9 @@ import {
 	hsvToStyle,
 	rgbToHSV,
 } from "solid-tiny-color";
-import { PaintState } from "../../paint";
-import { RGBA, rgbaForStyle } from "../../common/color";
+
+import { RGBA, rgbaForStyle } from "@/common";
+import { PaintState } from "@/paint";
 
 import "./PaletteModal.scss";
 

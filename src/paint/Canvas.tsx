@@ -1,10 +1,10 @@
 import { Component, onMount, onCleanup, JSX, createMemo } from "solid-js";
 
-import { PaintState } from "./state";
-
-import "./index.scss";
+import { PaintState } from ".";
 import Cursor from "./Cursor";
 import { EventBindInfo, mountEvents, unmountEvents } from "./event-handler";
+
+import "./index.scss";
 
 type Props = {
 	z: PaintState;
