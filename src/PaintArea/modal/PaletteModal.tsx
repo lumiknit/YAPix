@@ -14,7 +14,7 @@ import {
 } from "solid-tiny-color";
 
 import { RGBA, rgbaForStyle } from "@/common";
-import { PaintState } from "@/paint";
+import { PaintState, useColorFromHistory, useColorHSV } from "@/paint";
 
 import "./PaletteModal.scss";
 
@@ -44,7 +44,7 @@ const PaletteModal: Component<Props> = props => {
 			clearTimeout(updateTimeout);
 		}
 		updateTimeout = setTimeout(() => {
-			props.z.useColorHSV(newColor);
+			useColorHSV(props.z, newColor);
 			updateTimeout = undefined;
 		}, 500);
 	};
@@ -56,9 +56,9 @@ const PaletteModal: Component<Props> = props => {
 		);
 	};
 
-	const useColorFromHistory = (reversedIdx: number, color: RGBA) => {
+	const usePrevColor = (reversedIdx: number, color: RGBA) => {
 		setC(rgbToHSV([color[0], color[1], color[2]]));
-		props.z.useColorFromHistory(-1 - reversedIdx);
+		useColorFromHistory(props.z, reversedIdx);
 	};
 
 	return (
@@ -142,7 +142,7 @@ const PaletteModal: Component<Props> = props => {
 							style={{
 								background: rgbaForStyle(c()),
 							}}
-							onClick={() => useColorFromHistory(idx, c())}
+							onClick={() => usePrevColor(idx, c())}
 						/>
 					)}
 				</Index>

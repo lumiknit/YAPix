@@ -1,6 +1,6 @@
 import { Component } from "solid-js";
 
-import { Canvas, PaintState } from "@/paint";
+import { Canvas, createPaintState } from "@/paint";
 import { PaintConfig } from "@/paint/config";
 
 import ToolPanel from "./BottomToolPanel";
@@ -14,7 +14,7 @@ const EditView: Component<Props> = () => {
 	const config: PaintConfig = {
 		brushStabilization: 10,
 	};
-	let state = new PaintState(config, 128, 128);
+	let state = createPaintState(config, 128, 128);
 	let modalSwitches = createModalSwitches();
 	return (
 		<div class="p-edit-view">

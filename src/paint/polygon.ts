@@ -3,13 +3,24 @@
  * @description This module provide 'polygon' which can be used to draw on canvas or export to svg.
  */
 
-import { Boundary, extendBoundaryByRadius } from "@/common";
+import { Boundary, EMPTY_BOUNDARY, extendBoundaryByRadius } from "@/common";
 
+/**
+ * Polygon type for both of canvas2D and svg.
+ */
 export type Polygon = {
+	/** Point positions */
 	points: [number, number][];
+
+	/** Boundary contains min/max position of points */
 	bd: Boundary;
 
+	// Cached objects
+
+	/** Path2D */
 	path2D?: Path2D;
+
+	/** SVG points string */
 	svg?: string;
 };
 
@@ -21,13 +32,7 @@ export type Polygon = {
 export const polygon = (points: [number, number][]): Polygon => {
 	const p: Polygon = {
 		points,
-		bd: {
-			// Calculate boundary
-			l: Infinity,
-			t: Infinity,
-			r: -Infinity,
-			b: -Infinity,
-		},
+		bd: { ...EMPTY_BOUNDARY },
 	};
 	for (const [x, y] of points) {
 		p.bd = extendBoundaryByRadius(p.bd, x, y, 0);

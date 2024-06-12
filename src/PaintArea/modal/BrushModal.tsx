@@ -1,19 +1,24 @@
 import { Component, createSignal } from "solid-js";
 
-import { PaintState } from "@/paint";
+import {
+	PaintState,
+	getBrush,
+	setBrushShape,
+	setBrushShapeForCurrentTool,
+} from "@/paint";
 
 type Props = {
 	z: PaintState;
 };
 
 const BrushModal: Component<Props> = props => {
-	const brush = () => props.z.brush();
+	const brush = () => getBrush(props.z);
 
 	const [size, setSize] = createSignal(brush().size.w);
 	const [round, setRound] = createSignal(brush().round);
 
 	const updateBrush = () => {
-		props.z.setBrushShape(size(), round());
+		setBrushShapeForCurrentTool(props.z, size(), round());
 	};
 
 	return (

@@ -14,7 +14,7 @@ import {
 	TbSelectAll,
 	TbSettings,
 } from "solid-icons/tb";
-import { PaintState, ToolType } from "../paint";
+import { PaintState, ToolType, changeCurrentTool, redo, undo } from "../paint";
 import ToolButton from "./ToolButton";
 import { DRAW_SHAPE_ICON } from "./draw-shape";
 import { ModalSwitches, ModalTypes } from "./modal/Modals";
@@ -26,13 +26,13 @@ type Props = {
 
 const BottomToolPanel: Component<Props> = props => {
 	const handleToolChange = (tool: ToolType) => {
-		const currentTool = props.z.tool();
+		const currentTool = props.z.toolType();
 		if (tool === currentTool) {
 			// Open the brush modal
 			props.sw.brush(true);
 		} else {
 			// Change the tool
-			props.z.useTool(tool);
+			changeCurrentTool(props.z, tool);
 		}
 	};
 
@@ -55,12 +55,12 @@ const BottomToolPanel: Component<Props> = props => {
 					<TbSelectAll />
 				</ToolButton>
 				<ToolButton
-					onClick={() => props.z.undo()}
+					onClick={() => undo(props.z)}
 					disabled={props.z.history.historySize()[0] <= 0}>
 					<TbArrowBackUp />
 				</ToolButton>
 				<ToolButton
-					onClick={() => props.z.redo()}
+					onClick={() => redo(props.z)}
 					disabled={props.z.history.historySize()[1] <= 0}>
 					<TbArrowForwardUp />
 				</ToolButton>
@@ -76,12 +76,12 @@ const BottomToolPanel: Component<Props> = props => {
 					<TbColorPicker />
 				</ToolButton>
 				<ToolButton
-					class={props.z.tool() === "eraser" ? "active" : ""}
+					class={props.z.toolType() === "eraser" ? "active" : ""}
 					onClick={() => handleToolChange("eraser")}>
 					<TbEraser />
 				</ToolButton>
 				<ToolButton
-					class={props.z.tool() === "brush" ? "active" : ""}
+					class={props.z.toolType() === "brush" ? "active" : ""}
 					onClick={() => handleToolChange("brush")}>
 					<TbBrush />
 				</ToolButton>

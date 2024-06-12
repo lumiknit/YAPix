@@ -1,11 +1,31 @@
 import { RGB } from "solid-tiny-color";
 
+/**
+ * Canvas background configuration.
+ * The background of canvas will be rendered as checkerboard pattern.
+ * Each color represents the color of each square, and the size is the size of each square in pixels.
+ */
 export type PaintConfigCanvasBackground = {
+	/**
+	 * Color 1 of checkerboard.
+	 */
 	color1: RGB;
+
+	/**
+	 * Color 2 of checkerboard.
+	 */
 	color2: RGB;
+
+	/**
+	 * Size of each square in pixels.
+	 * This should be a positive integer.
+	 */
 	size: number;
 };
 
+/**
+ * Paint configuration.
+ */
 export type PaintConfig = {
 	/**
 	 * fps for rendering / brush processing.
@@ -39,6 +59,10 @@ export type PaintConfig = {
 	bgCheckerboard?: PaintConfigCanvasBackground;
 };
 
+/**
+ * Compiled paint configuration.
+ * It guarantees that all values cannot be undefined, and some values are pre-calculated for performance.
+ */
 export type CompiledPaintConfig = PaintConfig & {
 	/** Interval of each frame in ms */
 	fpsMS: number;
@@ -56,6 +80,10 @@ export type CompiledPaintConfig = PaintConfig & {
 	bgCheckerboard: PaintConfigCanvasBackground;
 };
 
+/**
+ * Compile paint configuration.
+ * It'll fill default values and pre-calculate some values for performance.
+ */
 export const compilePaintConfig = (
 	config: PaintConfig,
 ): CompiledPaintConfig => {

@@ -2,7 +2,13 @@ import { batch } from "solid-js";
 
 import { Pos } from "@/common";
 
-import { PaintState } from ".";
+import {
+	PaintState,
+	handlePointerDown,
+	handlePointerUp,
+	invertDisplayTransform,
+	updateRealCursorPos,
+} from ".";
 
 const MOVE_THRESHOLD = 6,
 	DOUBLE_CLICK_TIME = 250,
@@ -59,26 +65,25 @@ export const mountEvents = (
 		const originalX = e.clientX - boundRect.left;
 		const originalY = e.clientY - boundRect.top;
 
-		return z.invertTransform(originalX, originalY);
+		return invertDisplayTransform(z, originalX, originalY);
 	};
 
 	eventHandlers.pointerdown = (e: PointerEvent) => {
 		const [x, y] = getPointerPos(e);
-		z.pointerDown();
+		handlePointerDown(z);
 	};
 
 	eventHandlers.pointermove = (e: PointerEvent) => {
 		const [x, y] = getPointerPos(e);
-		z.updateRealCursor(x, y);
+		updateRealCursorPos(z, x, y);
 	};
 
 	eventHandlers.pointerup = (e: PointerEvent) => {
-		const [x, y] = getPointerPos(e);
-		z.pointerUp(true);
+		handlePointerUp(z, true);
 	};
 
 	eventHandlers.pointerleave = (e: PointerEvent) => {
-		z.pointerUp(false);
+		handlePointerUp(z, false);
 	};
 
 	// Wheel

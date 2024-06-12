@@ -2,8 +2,8 @@ import { Pos, ORIGIN, CanvasCtx2D } from "@/common";
 
 import { emptyCanvasContext, putContextToContext } from "@/common";
 
-/** Layer data except image data */
-export type LayerData = {
+/** Layer information without pixel/vector data */
+export type LayerInfo = {
 	/** Name of the layer */
 	name: string;
 
@@ -14,16 +14,24 @@ export type LayerData = {
 	opacity: number;
 };
 
-export type Layer = LayerData & {
+/** Layer Information with pixel data */
+export type Layer = LayerInfo & {
 	/** Image data */
 	data: CanvasCtx2D;
 };
 
-export const extractLayerData = (layer: Layer): LayerData => {
-	const l: LayerData = { ...layer };
-	delete (l as any).data;
-	return l;
-};
+/**
+ * Detach layer information from the layer.
+ *
+ * @param withLayerInfo An object extends LayerInfo
+ */
+export const detachLayerInfo = (withLayerInfo: LayerInfo): LayerInfo =>
+	Object.fromEntries(
+		(["name", "off", "opacity"] as (keyof LayerInfo)[]).map(key => [
+			key,
+			withLayerInfo[key],
+		]),
+	) as LayerInfo;
 
 /**
  * Create an empty layer.
@@ -38,7 +46,7 @@ export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
 };
 
 /**
- *
+ * Clone a layer.
  */
 export const cloneLayer = (layer: Layer): Layer => {
 	const data = emptyCanvasContext(
@@ -78,18 +86,4 @@ export const resizeLayer = (
 
 export const drawLayerToCanvas = (ctx: CanvasCtx2D, layer: Layer) => {
 	ctx.drawImage(layer.data.canvas, layer.off.x, layer.off.y);
-};
-
-export const canvasToLayer = (
-	canvas: HTMLCanvasElement,
-	name: string,
-): Layer => {
-	const data = canvas.getContext("2d");
-	if (!data) throw new Error("Failed to get 2d context");
-	return {
-		name,
-		off: { ...ORIGIN },
-		opacity: 1,
-		data,
-	};
 };

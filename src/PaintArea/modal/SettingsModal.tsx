@@ -1,6 +1,6 @@
 import { Component } from "solid-js";
 
-import { PaintState } from "@/paint";
+import { PaintState, fitCanvasToRoot, mergeLayersWithNewCtx } from "@/paint";
 import { ctxToBlob } from "@/common";
 
 type Props = {
@@ -16,7 +16,7 @@ const SettingsModal: Component<Props> = props => {
 
 			<button
 				onClick={() => {
-					props.z.fitCanvasToRoot();
+					fitCanvasToRoot(props.z);
 				}}>
 				Reset Zoom
 			</button>
@@ -25,7 +25,7 @@ const SettingsModal: Component<Props> = props => {
 
 			<button
 				onClick={() => {
-					const ctx = props.z.exportImage(4);
+					const ctx = mergeLayersWithNewCtx(props.z, 4);
 					const blob = ctxToBlob(ctx);
 					blob.then(b => {
 						const url = URL.createObjectURL(b);
