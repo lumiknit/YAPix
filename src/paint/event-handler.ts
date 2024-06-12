@@ -1,5 +1,47 @@
 import { batch } from "solid-js";
 import { PaintState } from ".";
+import { Pos } from "../common";
+
+const MOVE_THRESHOLD = 6,
+	DOUBLE_CLICK_TIME = 250,
+	DOUBLE_CLICK_THRESHOLD = 16,
+	LONG_PRESS_TIME = 750;
+
+const st = window.setTimeout,
+	ct = window.clearTimeout;
+
+export type PointerID = number;
+type WithPointerID = { id: PointerID };
+
+type Pointer = {
+	// Current position
+	moved: boolean;
+	timestamp: number;
+} & WithPointerID & Pos;
+
+type LongPress = {
+	id: PointerID;
+	u: number; // Timeout
+} & Pos;
+
+export type BaseEvent = WithPointerID & Pos & {};
+
+type LastClick = {
+	x: number;
+	y: number;
+	timestamp: number;
+};
+
+export type PointerEventState = {
+	pointers: Map<PointerID, Pointer>;
+	longPress?: LongPress;
+	maxPointers: number;
+	lastClick: LastClick;
+};
+
+
+
+
 
 export type EventBindInfo = {
 	target: HTMLElement;

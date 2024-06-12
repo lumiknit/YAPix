@@ -1,21 +1,23 @@
 import { Accessor, batch, createSignal, Setter } from "solid-js";
 import { HSV, hsvToRGB, rgbToHSV, rgbToStyle } from "solid-tiny-color";
 
-import { rgba, RGBA, rgbaForStyle } from "../common/color";
-import { Layer, createEmptyLayer, drawLayerToCanvas } from "./layer";
-import {
+import { rgba, RGBA, rgbaForStyle,
 	Boundary,
 	boundaryToRect,
-	Cursor,
-	DrawShape,
 	EMPTY_BOUNDARY,
-	ERASER_TYPE_TOOLS,
 	extendBoundaryByRect,
 	limitBoundaryToOriginRect,
 	ORIGIN,
 	Pos,
 	Rect,
 	Size,
+} from "../common";
+
+import { Layer, createEmptyLayer, drawLayerToCanvas } from "./layer";
+import {
+	Cursor,
+	DrawShape,
+	ERASER_TYPE_TOOLS,
 	ToolType,
 } from "./types";
 import {

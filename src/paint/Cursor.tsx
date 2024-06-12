@@ -1,7 +1,7 @@
 import { Component, createEffect, createMemo } from "solid-js";
 import { PaintState } from "./state";
 import { polygonToSVG } from "./polygon";
-import { boundaryToRect } from ".";
+import { boundaryToRect } from "../common";
 
 type Props = {
 	z: PaintState;
