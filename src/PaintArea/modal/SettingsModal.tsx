@@ -1,6 +1,7 @@
 import { Component } from "solid-js";
 
 import { PaintState } from "@/paint";
+import { ctxToBlob } from "@/common";
 
 type Props = {
 	z: PaintState;
@@ -25,10 +26,15 @@ const SettingsModal: Component<Props> = props => {
 			<button
 				onClick={() => {
 					const ctx = props.z.exportImage(4);
-					const a = document.createElement("a");
-					a.href = ctx.canvas.toDataURL();
-					a.download = "image.png";
-					a.click();
+					const blob = ctxToBlob(ctx);
+					blob.then(b => {
+						const url = URL.createObjectURL(b);
+						const a = document.createElement("a");
+						a.href = url;
+						a.download = "image.png";
+						a.click();
+						URL.revokeObjectURL(url);
+					});
 				}}>
 				Export
 			</button>

@@ -15,9 +15,12 @@ import {
 	RGBA,
 	rgbaForStyle,
 	Size,
+	emptyCanvasContext,
+	extractCanvasRect,
+	putContextToContext,
+	CanvasCtx2D,
 } from "@/common";
 
-import { emptyCanvasContext, extractCanvasRect, putContextToContext } from ".";
 import { HistoryManager } from "./action-history";
 import { Action, UpdateImgAction } from "./actions";
 import { CompiledPaintConfig, compilePaintConfig, PaintConfig } from "./config";
@@ -217,7 +220,7 @@ export class PaintState {
 	/**
 	 * Convert the whole layers into a single canvas.
 	 */
-	exportImage(scale: number): CanvasRenderingContext2D {
+	exportImage(scale: number): CanvasCtx2D {
 		this.updateFocusedLayerData();
 
 		const ectx = emptyCanvasContext(this.size.w, this.size.h);

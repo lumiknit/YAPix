@@ -1,6 +1,6 @@
-import { Pos, ORIGIN } from "@/common";
+import { Pos, ORIGIN, CanvasCtx2D } from "@/common";
 
-import { emptyCanvasContext, putContextToContext } from "./utils";
+import { emptyCanvasContext, putContextToContext } from "@/common";
 
 /** Layer data except image data */
 export type LayerData = {
@@ -16,7 +16,7 @@ export type LayerData = {
 
 export type Layer = LayerData & {
 	/** Image data */
-	data: CanvasRenderingContext2D;
+	data: CanvasCtx2D;
 };
 
 export const extractLayerData = (layer: Layer): LayerData => {
@@ -76,10 +76,7 @@ export const resizeLayer = (
 	};
 };
 
-export const drawLayerToCanvas = (
-	ctx: CanvasRenderingContext2D,
-	layer: Layer,
-) => {
+export const drawLayerToCanvas = (ctx: CanvasCtx2D, layer: Layer) => {
 	ctx.drawImage(layer.data.canvas, layer.off.x, layer.off.y);
 };
 

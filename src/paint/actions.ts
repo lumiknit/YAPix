@@ -3,7 +3,7 @@
  * @description The module contains available actions, and types for edit history.
  */
 
-import { Rect } from "@/common";
+import { CanvasCtx2D, Rect } from "@/common";
 
 import { Layer } from ".";
 
@@ -15,9 +15,9 @@ export type UpdateImgAction = {
 	/** Where the image data was updated */
 	rect: Rect;
 	/** Image data for revert */
-	oldImg: CanvasRenderingContext2D;
+	oldImg: CanvasCtx2D;
 	/** New image data */
-	newImg?: CanvasRenderingContext2D;
+	newImg?: CanvasCtx2D;
 };
 
 // -- Layer control
