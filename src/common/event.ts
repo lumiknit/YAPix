@@ -1,8 +1,8 @@
 export type Modifiers = {
-	shift: boolean;
-	ctrl: boolean;
-	alt: boolean;
-	meta: boolean;
+	shift?: boolean;
+	ctrl?: boolean;
+	alt?: boolean;
+	meta?: boolean;
 };
 
 export const getModifiers = (
