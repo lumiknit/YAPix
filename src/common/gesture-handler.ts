@@ -490,38 +490,56 @@ export const addGestureListeners = (
 			g.type = "pinch";
 		}
 		g.ptrType = ptr.type;
+
+		// Reset all dragStartPos
+		ctx.pointers.forEach(p => {
+			p.dragStartPos = { ...p.pos };
+		});
 	};
 
 	const createDragEvent = (e: PointerGestureEvent): DragGestureEvent => {
 		const g = ctx.gesture!;
-		const tr = g.translate;
 		const ptr = ctx.pointers.get(e.id)!;
 		// Just add the translate
-		tr.x += ptr.delta.x;
-		tr.y += ptr.delta.y;
-		console.log(tr);
+		g.translate = {
+			x: ptr.pos.x - ptr.dragStartPos.x,
+			y: ptr.pos.y - ptr.dragStartPos.y,
+		}
 		return {
 			...e,
-			translate: { ...tr },
+			translate: { ...g.translate },
 		};
 	};
 
 	const createPinchEvent = (e: PointerGestureEvent): PinchGestureEvent => {
+		// Calculate the transform based on the two pointers.
+		// Apply order is Translate -> Rotation -> Scale
 		const g = ctx.gesture!;
 		const ptrs = Array.from(ctx.pointers.values());
 		const p1 = ptrs[0],
 			p2 = ptrs[1];
-		const scale = Math.hypot(p1.pos.x - p2.pos.x, p1.pos.y - p2.pos.y);
-		const rotation = Math.atan2(p2.pos.y - p1.pos.y, p2.pos.x - p1.pos.x);
-		const translate = {
-			x: (p1.delta.x + p2.delta.x) / 2,
-			y: (p1.delta.y + p2.delta.y) / 2,
+		const p1Start = p1.dragStartPos,
+			p2Start = p2.dragStartPos,
+			p1Now = p1.pos,
+			p2Now = p2.pos;
+		const dxStart = p1Start.x - p2Start.x,
+			dyStart = p1Start.y - p2Start.y,
+			dxNow = p1Now.x - p2Now.x,
+			dyNow = p1Now.y - p2Now.y;
+		// Translate. The center of two pointers.
+		g.translate = {
+			x: (p1Now.x + p2Now.x) / 2 - (p1Start.x + p2Start.x) / 2,
+			y: (p1Now.y + p2Now.y) / 2 - (p1Start.y + p2Start.y) / 2,
 		};
+		// Rotation. The angle between two pointers.
+		g.rotation = Math.atan2(dyNow, dxNow) - Math.atan2(dyStart, dxStart);
+		// Scale. The distance between two pointers.
+		g.scale = Math.hypot(dxNow, dyNow) / Math.hypot(dxStart, dyStart);
 		return {
 			...e,
-			scale,
-			rotation,
-			translate,
+			translate: { ...g.translate },
+			scale: g.scale,
+			rotation: g.rotation,
 		};
 	};
 
