@@ -31,7 +31,7 @@ const Canvas: Component<Props> = props => {
 				});
 			},
 			onPointerMove(e) {
-				console.log("pointer move", e);
+				//console.log("pointer move", e);
 			},
 			onPointerUp(e) {
 				console.log("pointer up", e);
@@ -65,8 +65,8 @@ const Canvas: Component<Props> = props => {
 			},
 			onDragEnd(e) {
 				console.log("drag end", e);
-				const ptr = e?.pointers.get(e.id);
-				toast(`drag end (${ptr?.pos.x}, ${ptr?.pos.y}) type=${ptr?.type}`);
+				const ptr = e.pointers.get(e.id)!;
+				toast(`drag end (${e.translate.x}, ${e.translate.y}) type=${ptr.type}`);
 			},
 			onPinchStart(e) {
 				console.log("pinch start", e);
@@ -78,9 +78,9 @@ const Canvas: Component<Props> = props => {
 			},
 			onPinchEnd(e) {
 				console.log("pinch end", e);
-				const ptr = e?.pointers.get(e.id);
+				const ptr = e.pointers.get(e.id)!;
 				toast(
-					`pinch end scale=${e?.scale} rotate=${e?.rotation} translate=(${e?.translation.x}, ${e?.translation.y}) type=${ptr?.type}`,
+					`pinch end scale=${e.scale} rotate=${e.rotation} translate=(${e.translate.x}, ${e.translate.y}) type=${ptr.type}`,
 				);
 			},
 		});
