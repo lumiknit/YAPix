@@ -2,8 +2,12 @@ import {
 	GestureEventContext,
 	createGestureEventContext,
 } from "@/common/gesture-handler";
-import { PaintState, saveDisplayTransform } from ".";
-import { batch } from "solid-js";
+import {
+	PaintState,
+	restoreDisplayTransform,
+	saveDisplayTransform,
+	transformOverDisplay,
+} from ".";
 
 export const createPaintGestureContext = (
 	z: PaintState,
@@ -35,21 +39,8 @@ export const createPaintGestureContext = (
 		onPinchMove(e) {
 			// Update the display state based on the pinch gesture
 			// Translate should be invert transformed and re-transformed
-			const cos = Math.cos(e.rotate);
-			const sin = Math.sin(e.rotate);
-
-			const x =
-				e.translate.x +
-				e.scale * (cos * z.savedScroll.x - sin * z.savedScroll.y);
-			const y =
-				e.translate.y +
-				e.scale * (sin * z.savedScroll.x + cos * z.savedScroll.y);
-
-			batch(() => {
-				z.setZoom(z.savedZoom * e.scale);
-				z.setAngle(z.savedAngle + e.rotate);
-				z.setScroll({ x, y });
-			});
+			restoreDisplayTransform(z);
+			transformOverDisplay(z, e.scale, e.rotate, e.translate);
 		},
 	});
 	return gestureCtx;

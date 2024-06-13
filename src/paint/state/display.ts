@@ -85,3 +85,29 @@ export const saveDisplayTransform = (z: WithDisplaySignal) => {
 	z.savedZoom = z.zoom();
 	z.savedAngle = z.angle();
 };
+
+export const restoreDisplayTransform = (z: WithDisplaySignal) => {
+	batch(() => {
+		z.setScroll(z.savedScroll);
+		z.setZoom(z.savedZoom);
+		z.setAngle(z.savedAngle);
+	});
+};
+
+export const transformOverDisplay = (
+	z: WithDisplaySignal,
+	scale: number,
+	angle: number,
+	{ x, y }: Pos,
+): void => {
+	const cos = Math.cos(angle),
+		sin = Math.sin(angle);
+	batch(() => {
+		z.setAngle(a => a + angle);
+		z.setZoom(z => z * scale);
+		z.setScroll(s => ({
+			x: x + scale * (cos * s.x - sin * s.y),
+			y: y + scale * (sin * s.x + cos * s.y),
+		}));
+	});
+};
