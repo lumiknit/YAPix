@@ -1,14 +1,18 @@
-import { Component, onMount, onCleanup, JSX, createMemo } from "solid-js";
+import {
+	Component,
+	onMount,
+	onCleanup,
+	JSX,
+	createMemo,
+	createSignal,
+} from "solid-js";
 
 import { PaintState, initPaintState, stepForPaintState } from ".";
 import Cursor from "./Cursor";
-import {
-	addGestureListeners,
-	createGestureEventContext,
-} from "../common/gesture-handler";
+import { addGestureListeners } from "@/common/gesture-handler";
 
 import "./index.scss";
-import toast from "solid-toast";
+import { createPaintGestureContext } from "./state/gesture";
 
 type Props = {
 	z: PaintState;
@@ -22,78 +26,16 @@ const Canvas: Component<Props> = props => {
 	onMount(() => {
 		initPaintState(props.z);
 
-		let gestureCtx = createGestureEventContext({
-			captureRef: props.z.rootRef!,
-			onPointerDown(e) {
-				console.log("pointer down", e);
-				toast("pointer down", {
-					duration: 300,
-				});
-			},
-			onPointerMove(e) {
-				//console.log("pointer move", e);
-			},
-			onPointerUp(e) {
-				console.log("pointer up", e);
-				toast("pointer up", {
-					duration: 300,
-				});
-			},
-			onPointerCancel(e) {
-				console.log("pointer cancel", e);
-				toast.error("pointer cancel");
-			},
-			onTap(e) {
-				console.log("tap", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(`tap #=${e.count} (${ptr.pos.x}, ${ptr.pos.y}) type=${ptr.type}`);
-			},
-			onLongPress(e) {
-				console.log("long press", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(
-					`long press #=${e.count} (${ptr.pos.x}, ${ptr.pos.y}) type=${ptr.type}`,
-				);
-			},
-			onDragStart(e) {
-				console.log("drag start", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(`drag start (${ptr.pos.x}, ${ptr.pos.y}) type=${ptr.type}`);
-			},
-			onDragMove(e) {
-				console.log("drag move", e);
-			},
-			onDragEnd(e) {
-				console.log("drag end", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(`drag end (${e.translate.x}, ${e.translate.y}) type=${ptr.type}`);
-			},
-			onPinchStart(e) {
-				console.log("pinch start", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(`pinch start type=${ptr.type}`);
-			},
-			onPinchMove(e) {
-				console.log("pinch move", e);
-			},
-			onPinchEnd(e) {
-				console.log("pinch end", e);
-				const ptr = e.pointers.get(e.id)!;
-				toast(
-					`pinch end scale=${e.scale} rotate=${e.rotation} translate=(${e.translate.x}, ${e.translate.y}) type=${ptr.type}`,
-				);
-			},
-		});
+		const gestureCtx = createPaintGestureContext(props.z);
 		removeGestureEvents = addGestureListeners(props.z.rootRef!, gestureCtx);
+
 		mainLoop = setInterval(
 			() => stepForPaintState(props.z),
 			1000 / (props.z.config().fps || 60),
 		);
 	});
 	onCleanup(() => {
-		if (removeGestureEvents) {
-			removeGestureEvents();
-		}
+		removeGestureEvents?.();
 		clearTimeout(mainLoop);
 	});
 
@@ -115,7 +57,7 @@ const Canvas: Component<Props> = props => {
 
 	const canvasTransform = createMemo(() => {
 		const d = props.z.scroll();
-		return `translate(${d.x}px, ${d.y}px)`;
+		return `translate(${d.x}px, ${d.y}px) rotate(${props.z.angle()}rad)`;
 	});
 
 	return (
@@ -128,6 +70,9 @@ const Canvas: Component<Props> = props => {
 					// DO NOT USE scale in tranform, because the canvas looks blurry in safari.
 					{
 						transform: canvasTransform(),
+						"transform-origin": "0 0",
+						width: `${props.z.size().w * props.z.zoom()}px`,
+						height: `${props.z.size().h * props.z.zoom()}px`,
 					}
 				}>
 				<canvas

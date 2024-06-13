@@ -31,7 +31,7 @@ export const POINTER_TYPES = ["pen", "touch"] as const;
 export type GestureType = "done" | "wait-tap" | "drag" | "pinch";
 
 /** Max distance which does not considered as touch as drag. Pixels. */
-const NON_DRAG_THRESHOLD = 6;
+const NON_DRAG_THRESHOLD = 4;
 
 /** Max duration until the touch is not considered as tap. Milliseconds. */
 const TAP_MAX_INTERVAL = 200;
@@ -61,22 +61,30 @@ type WithTimestamp = { timeStamp: number };
 
 /**
  * Transform object.
+ * If you want to apply the transform to the element directly,
+ * please keep the order: Translate -> Rotate -> Scale.
+ * Note that the rotation/scale center should be (0, 0) point.
+ * So for css tranform, you need to move the element to the center of the rotation/scale.
+ * e.g.
+ * ```css
+ * transform-origin: 0 0;
+ * transform: translate(...) rotate(...) scale(...)
  */
 export type Transform = {
 	/** Translation */
 	translate: Pos;
 
+	/** Rotation in radian */
+	rotate: number;
+
 	/** Scale factor */
 	scale: number;
-
-	/** Rotation in radian */
-	rotation: number;
 };
 
 const INIT_TRANSFORM: Transform = {
 	translate: { ...ORIGIN },
 	scale: 1,
-	rotation: 0,
+	rotate: 0,
 };
 
 /**
@@ -244,13 +252,13 @@ export type GestureEventContextParams = {
 
 	/**
 	 * Called when more than two pointers are moved.
-	 * This event will have calculated scale/rotation/translate values.
+	 * This event will have calculated scale/rotate/translate values.
 	 */
 	onPinchMove?: (e: PinchGestureEvent) => void;
 
 	/**
 	 * Called when at least one pointer is up.
-	 * This event will have calculated scale/rotation/translate values.
+	 * This event will have calculated scale/rotate/translate values.
 	 */
 	onPinchEnd?: (e: PinchGestureEvent) => void;
 };
@@ -287,7 +295,7 @@ export type GestureState = {
 	scale: number;
 
 	/** Rotation in radian */
-	rotation: number;
+	rotate: number;
 };
 
 export type GestureEventContext = GestureEventContextParams & {
@@ -410,7 +418,7 @@ export const addGestureListeners = (
 					ctx.onPinchEnd?.({
 						...baseGestureEventFromPointer(ptr.id, Date.now()),
 						scale: g.scale,
-						rotation: g.rotation,
+						rotate: g.rotate,
 						translate: g.translate,
 					});
 					break;
@@ -451,7 +459,7 @@ export const addGestureListeners = (
 			maxPointers: ctx.pointers.size,
 			translate: ORIGIN,
 			scale: 1,
-			rotation: 0,
+			rotate: 0,
 		});
 	};
 
@@ -462,7 +470,7 @@ export const addGestureListeners = (
 		// Initialize the transform
 		g.translate = { ...ORIGIN };
 		g.scale = 1;
-		g.rotation = 0;
+		g.rotate = 0;
 
 		console.log("Reset tr", g.translate);
 
@@ -504,7 +512,7 @@ export const addGestureListeners = (
 		g.translate = {
 			x: ptr.pos.x - ptr.dragStartPos.x,
 			y: ptr.pos.y - ptr.dragStartPos.y,
-		}
+		};
 		return {
 			...e,
 			translate: { ...g.translate },
@@ -522,24 +530,37 @@ export const addGestureListeners = (
 			p2Start = p2.dragStartPos,
 			p1Now = p1.pos,
 			p2Now = p2.pos;
+
+		// Difference of two pointers
 		const dxStart = p1Start.x - p2Start.x,
 			dyStart = p1Start.y - p2Start.y,
 			dxNow = p1Now.x - p2Now.x,
 			dyNow = p1Now.y - p2Now.y;
-		// Translate. The center of two pointers.
-		g.translate = {
-			x: (p1Now.x + p2Now.x) / 2 - (p1Start.x + p2Start.x) / 2,
-			y: (p1Now.y + p2Now.y) / 2 - (p1Start.y + p2Start.y) / 2,
-		};
+
+		// Center of two pointers
+		const cxStart = (p1Start.x + p2Start.x) / 2,
+			cyStart = (p1Start.y + p2Start.y) / 2,
+			cxNow = (p1Now.x + p2Now.x) / 2,
+			cyNow = (p1Now.y + p2Now.y) / 2;
+
 		// Rotation. The angle between two pointers.
-		g.rotation = Math.atan2(dyNow, dxNow) - Math.atan2(dyStart, dxStart);
+		g.rotate = Math.atan2(dyNow, dxNow) - Math.atan2(dyStart, dxStart);
+
 		// Scale. The distance between two pointers.
 		g.scale = Math.hypot(dxNow, dyNow) / Math.hypot(dxStart, dyStart);
+
+		// Translate. The center of two pointers.
+		const cosRotate = Math.cos(g.rotate),
+			sinRotate = Math.sin(g.rotate);
+		g.translate = {
+			x: cxNow - g.scale * (cosRotate * cxStart - sinRotate * cyStart),
+			y: cyNow - g.scale * (sinRotate * cxStart + cosRotate * cyStart),
+		};
 		return {
 			...e,
 			translate: { ...g.translate },
 			scale: g.scale,
-			rotation: g.rotation,
+			rotate: g.rotate,
 		};
 	};
 

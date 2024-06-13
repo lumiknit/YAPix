@@ -5,10 +5,22 @@ import { WithImageInfo } from ".";
 
 /** An object contains display information */
 export type WithDisplaySignal = {
+	/** Scroll in pixels */
 	scroll: Accessor<Pos>;
 	setScroll: Setter<Pos>;
+
+	/** Zoom scale */
 	zoom: Accessor<number>;
 	setZoom: Setter<number>;
+
+	/** Angle in radian */
+	angle: Accessor<number>;
+	setAngle: Setter<number>;
+
+	/** Saved transform */
+	savedScroll: Pos;
+	savedZoom: number;
+	savedAngle: number;
 };
 
 export const installDisplaySignal = <T extends object>(
@@ -16,7 +28,18 @@ export const installDisplaySignal = <T extends object>(
 ): T & WithDisplaySignal => {
 	const [scroll, setScroll] = createSignal<Pos>({ ...ORIGIN });
 	const [zoom, setZoom] = createSignal(8);
-	return Object.assign(target, { scroll, setScroll, zoom, setZoom });
+	const [angle, setAngle] = createSignal(0);
+	return Object.assign(target, {
+		scroll,
+		setScroll,
+		zoom,
+		setZoom,
+		angle,
+		setAngle,
+		savedScroll: scroll(),
+		savedZoom: zoom(),
+		savedAngle: angle(),
+	});
 };
 
 /**
@@ -55,4 +78,10 @@ export const fitDisplayTo = (
 		z.setZoom(zoom);
 		z.setScroll({ x, y });
 	});
+};
+
+export const saveDisplayTransform = (z: WithDisplaySignal) => {
+	z.savedScroll = z.scroll();
+	z.savedZoom = z.zoom();
+	z.savedAngle = z.angle();
 };
