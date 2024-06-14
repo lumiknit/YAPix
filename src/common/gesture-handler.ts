@@ -693,6 +693,11 @@ export const addGestureListeners = (
 					longPressCallback(e.pointerId),
 					LONG_PRESS_DURATION,
 				);
+			} else if (!ctx.onTap) {
+				// In this case, don't need to wait until tap event.
+				// Start drag immediately.
+				startDrag(ptr, rawEvent);
+				ptr.moved = true;
 			}
 		} else {
 			switch (g.type) {
@@ -710,9 +715,11 @@ export const addGestureListeners = (
 					// Since the pointer count will be increased, we need to convert event to drag.
 					markGestureDone(ptr);
 					startDrag(ptr, rawEvent);
+					ptr.moved = true;
 					break;
 				case "pinch":
 					// Already pinching. Do nothing.
+					ptr.moved = true;
 					break;
 			}
 			// Update the gesture state

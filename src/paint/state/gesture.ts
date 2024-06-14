@@ -32,13 +32,6 @@ export const createPaintGestureContext = (
 		onPointerUp(e) {},
 		onPointerCancel(e) {},
 
-		onTap(e) {
-			return false;
-		},
-		onLongPress(e) {
-			return false;
-		},
-
 		onDragStart(e) {
 			const ptr = e.pointers.get(e.id)!;
 			const action =

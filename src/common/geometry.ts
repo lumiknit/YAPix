@@ -99,29 +99,49 @@ export const EMPTY_BOUNDARY = {
 };
 
 /**
- * Extend the boundary to include the rect (x - r, y - r) - (x + r, y + r)
+ * Extend the boundary to include the rect (x - r, y - r) - (x + r, y + r).
+ * Inplace.
  */
 export const extendBoundaryByRadius = (
 	b: Boundary,
 	x: number,
 	y: number,
 	r: number,
-): Boundary => ({
-	l: Math.min(b.l, x - r),
-	r: Math.max(b.r, x + r),
-	t: Math.min(b.t, y - r),
-	b: Math.max(b.b, y + r),
-});
+): Boundary => {
+	b.l = Math.min(b.l, x - r);
+	b.r = Math.max(b.r, x + r);
+	b.t = Math.min(b.t, y - r);
+	b.b = Math.max(b.b, y + r);
+	return b;
+};
 
 /**
- * Extend the boundary to include the rect (x, y) - (x + w, y + h)
+ * Extend the boundary to include the rect (x, y) - (x + 1, y + 1).
+ * Inplace.
  */
-export const extendBoundaryByRect = (b: Boundary, rect: Rect): Boundary => ({
-	l: Math.min(b.l, rect.x),
-	r: Math.max(b.r, rect.x + rect.w),
-	t: Math.min(b.t, rect.y),
-	b: Math.max(b.b, rect.y + rect.h),
-});
+export const extendBoundaryByPixel = (
+	b: Boundary,
+	x: number,
+	y: number,
+): Boundary => {
+	b.l = Math.min(b.l, x);
+	b.r = Math.max(b.r, x + 1);
+	b.t = Math.min(b.t, y);
+	b.b = Math.max(b.b, y + 1);
+	return b;
+};
+
+/**
+ * Extend the boundary to include the rect (x, y) - (x + w, y + h).
+ * Inplace.
+ */
+export const extendBoundaryByRect = (b: Boundary, rect: Rect): Boundary => {
+	b.l = Math.min(b.l, rect.x);
+	b.r = Math.max(b.r, rect.x + rect.w);
+	b.t = Math.min(b.t, rect.y);
+	b.b = Math.max(b.b, rect.y + rect.h);
+	return b;
+};
 
 /**
  * Limit the boundary to the origin rect (0, 0) - (w, h).

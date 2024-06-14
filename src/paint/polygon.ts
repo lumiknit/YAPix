@@ -35,7 +35,7 @@ export const polygon = (points: [number, number][]): Polygon => {
 		bd: { ...EMPTY_BOUNDARY },
 	};
 	for (const [x, y] of points) {
-		p.bd = extendBoundaryByRadius(p.bd, x, y, 0);
+		extendBoundaryByRadius(p.bd, x, y, 0);
 	}
 	return p;
 };

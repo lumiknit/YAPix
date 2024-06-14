@@ -8,6 +8,8 @@ import {
 	boundaryToRect,
 	extendBoundaryByRect,
 	EMPTY_BOUNDARY,
+	ctxToBlob,
+	extendBoundaryByPixel,
 } from "@/common";
 
 import {
@@ -22,8 +24,10 @@ import {
 	contextUseToolStyle,
 	getBrush,
 	getBrushPos,
+	getFocusedLayerCtx,
 	getTempLayerCtx,
 } from ".";
+import { ERASER_TYPE_TOOLS } from "..";
 
 /**
  * Draw a brush shape at the given position.
@@ -63,7 +67,7 @@ const drawBrushLine = (
 			ctx.translate(x - lx, y - ly);
 			(lx = x), (ly = y);
 			ctx.fill(polygonTo4SegPath2D(brush.shape, l - 1, 0));
-			z.tempBd = extendBoundaryByRect(z.tempBd, {
+			extendBoundaryByRect(z.tempBd, {
 				x: x + brushRect.x,
 				y: y + brushRect.y,
 				w: l - 1 + brushRect.w,
@@ -74,7 +78,7 @@ const drawBrushLine = (
 			ctx.translate(x - lx, y - ly);
 			(lx = x), (ly = y);
 			ctx.fill(polygonTo4SegPath2D(brush.shape, 0, l - 1));
-			z.tempBd = extendBoundaryByRect(z.tempBd, {
+			extendBoundaryByRect(z.tempBd, {
 				x: x + brushRect.x,
 				y: y + brushRect.y,
 				w: brushRect.w,
@@ -207,6 +211,89 @@ const drawLine = (z: PaintState, pos: Pos) => {
 	z.ptrState!.last = { ...pos };
 };
 
+export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
+	const tool = z.toolType();
+	const ptrState = z.ptrState!;
+	if (ptrState.last.x < 0) {
+		// Already handled.
+		return;
+	}
+	const stack = [Math.floor(pos.x), Math.floor(pos.y)];
+	if (
+		stack[0] < 0 ||
+		stack[0] >= z.size().w ||
+		stack[1] < 0 ||
+		stack[1] >= z.size().h
+	)
+		return;
+
+	// Color reference ctx
+	const refCtx = ERASER_TYPE_TOOLS.has(tool)
+		? getTempLayerCtx(z)
+		: getFocusedLayerCtx(z);
+	const refData = refCtx.getImageData(0, 0, z.size().w, z.size().h);
+	const refWidth = refData.width;
+	const refHeight = refData.height;
+
+	// Create mask image data
+	const maskData = new Uint8Array(refWidth * refHeight);
+
+	const colorMatch = (data: Uint8ClampedArray, color: Uint8ClampedArray) => {
+		// Calculate distance
+		let dist =
+			[0, 1, 2, 3].reduce((acc, i) => acc + (data[i] - color[i]) ** 2, 0) / 4;
+		return dist <= threshold;
+	};
+
+	// Fill the mask with 1 if the pixel is the same color as the start pixel
+	const startColor = refCtx.getImageData(pos.x, pos.y, 1, 1).data;
+
+	let bd = { ...EMPTY_BOUNDARY };
+
+	while (stack.length > 0) {
+		const y = stack.pop()!;
+		const x = stack.pop()!;
+		const idx = (y * refWidth + x) * 4;
+		if (
+			x < 0 ||
+			x >= refWidth ||
+			y < 0 ||
+			y >= refHeight ||
+			maskData[y * refWidth + x] > 0
+		)
+			continue;
+		if (!colorMatch(refData.data.slice(idx, idx + 4), startColor)) {
+			maskData[y * refWidth + x] = 1;
+			continue;
+		}
+		maskData[y * refWidth + x] = 255;
+		extendBoundaryByPixel(bd, x, y);
+		stack.push(x - 1, y);
+		stack.push(x + 1, y);
+		stack.push(x, y - 1);
+		stack.push(x, y + 1);
+	}
+
+	// Apply mask to the temp layer
+	const tempCtx = getTempLayerCtx(z);
+	tempCtx.save();
+	contextUseToolStyle(z, tempCtx);
+	for (let y = 0; y < refHeight; y++) {
+		for (let x = 0; x < refWidth; x++) {
+			if (maskData[y * refWidth + x] > 127) {
+				tempCtx.fillRect(x, y, 1, 1);
+			}
+		}
+	}
+	tempCtx.restore();
+
+	z.tempBd = bd;
+	console.log(bd);
+
+	// Set last to -1 to prevent further flood fill
+	ptrState.last = { x: -1, y: -1 };
+};
+
 /** Draw if pointer is down */
 export const drawIfPointerDown = (z: PaintState) => {
 	if (!z.ptrState) return;
@@ -233,6 +320,9 @@ export const drawIfPointerDown = (z: PaintState) => {
 			break;
 		case "line":
 			drawLine(z, pos);
+			break;
+		case "fill":
+			floodFill(z, pos, 1);
 			break;
 	}
 };
