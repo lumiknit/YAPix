@@ -50,11 +50,11 @@ export const normPos = (p: Pos): number => Math.hypot(p.x, p.y);
  * @returns The transformed point.
  */
 export const scaleRotate2D = (angle: number, scale: number, p: Pos): Pos => {
-	const cos = Math.cos(angle),
-		sin = Math.sin(angle);
+	const cos = scale * Math.cos(angle),
+		sin = scale * Math.sin(angle);
 	return {
-		x: scale * (cos * p.x - sin * p.y),
-		y: scale * (sin * p.x + cos * p.y),
+		x: cos * p.x - sin * p.y,
+		y: sin * p.x + cos * p.y,
 	};
 };
 
