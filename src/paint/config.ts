@@ -67,11 +67,14 @@ export type CompiledPaintConfig = PaintConfig & {
 	/** Interval of each frame in ms */
 	fpsMS: number;
 
-	/** Canvas click action */
-	canvasClickAction: "draw" | "move" | "moveTouchOnly";
+	/** Canvas Pen Action */
+	canvasPenAction: "draw" | "move";
+
+	/** Canvas Touch Action */
+	canvasTouchAction: "draw" | "move";
 
 	/** Brush stabilization factor. (0, 1] */
-	brushStabFactor: number;
+	brushFollowFactor: number;
 
 	/** Max history size */
 	maxHistory: number;
@@ -89,9 +92,10 @@ export const compilePaintConfig = (
 ): CompiledPaintConfig => {
 	return {
 		...config,
-		fpsMS: 1000 / (config.fps || 60),
-		canvasClickAction: config.canvasClickAction || "moveTouchOnly",
-		brushStabFactor: Math.pow(0.1, config.brushStabilization || 0),
+		fpsMS: 1000 / (config.fps || 10),
+		canvasPenAction: config.canvasClickAction === "move" ? "move" : "draw",
+		canvasTouchAction: config.canvasClickAction === "draw" ? "draw" : "move",
+		brushFollowFactor: Math.pow(0.01, config.brushStabilization || 0),
 		maxHistory: Math.max(config.maxHistory || 100, 8),
 		bgCheckerboard: config.bgCheckerboard || {
 			color1: [102, 102, 102],

@@ -1,16 +1,21 @@
 /**
- * @module composition
+ * @module composited
  * @description PaintState methods, which does not need full of PaintState.
+ *
+ * This module contains methods, which use a part of PaintState, but not all of them.
  */
-import { batch, enableExternalSource } from "solid-js";
+
+import { batch } from "solid-js";
 
 import {
 	CanvasCtx2D,
 	Pos,
 	Rect,
+	posOnLine,
 	rgba,
 	rgbaForStyle,
-	scaleRotate2D,
+	rotateScale2D,
+	rotateScaleRaw2D,
 } from "@/common";
 import { ERASER_TYPE_TOOLS, ToolType } from "..";
 
@@ -41,14 +46,11 @@ export const updateBrushCursorPos = (
 		z.setCursor(c => ({ ...c, brush: c.real }));
 	} else {
 		const cfg = z.config();
-		const r = Math.pow(cfg.brushStabFactor, dt / 1000);
+		const r = Math.pow(cfg.brushFollowFactor, dt / 1000);
 		z.setCursor(c => {
 			return {
 				...c,
-				brush: {
-					x: c.brush.x * (1 - r) + c.real.x * r,
-					y: c.brush.y * (1 - r) + c.real.y * r,
-				},
+				brush: posOnLine(c.brush, c.real, r),
 			};
 		});
 	}
@@ -167,29 +169,38 @@ export const contextUseToolStyle = (
 
 // --- Display
 
+/**
+ * Rotate and scale the display by the given center.
+ * If center is not provided, it will be the center of the canvas.
+ */
 export const rotateScaleDisplayByCenter = (
 	z: WithImageInfo & WithDisplaySignal,
 	rotate: number,
 	scale: number,
+	center?: Pos,
 ) => {
 	const sz = z.size();
-	const center = {
-		x: sz.w / 2,
-		y: sz.h / 2,
-	};
+	if (!center) {
+		center = {
+			x: sz.w / 2,
+			y: sz.h / 2,
+		};
+	}
 
 	const oldZoom = z.zoom(),
 		oldAngle = z.angle(),
 		newZoom = oldZoom * scale,
-		newAngle = oldAngle + rotate;
+		rad = oldAngle.rad + rotate,
+		cos = Math.cos(rad),
+		sin = Math.sin(rad);
 
-	const oldCenter = scaleRotate2D(oldAngle, oldZoom, center);
-	const newCenter = scaleRotate2D(newAngle, newZoom, center);
+	const oldCenter = rotateScale2D(oldAngle.rad, oldZoom, center);
+	const newCenter = rotateScaleRaw2D(cos, sin, newZoom, center);
 
 	// Set the values
 	batch(() => {
 		z.setZoom(newZoom);
-		z.setAngle(newAngle);
+		z.setAngle({ rad, cos, sin });
 		z.setScroll(s => {
 			return {
 				x: s.x + oldCenter.x - newCenter.x,

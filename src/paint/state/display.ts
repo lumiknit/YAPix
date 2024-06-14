@@ -1,7 +1,25 @@
 import { Accessor, Setter, batch, createSignal } from "solid-js";
 
-import { Pos, ORIGIN, scaleRotate2D, addPos } from "@/common";
+import {
+	Pos,
+	ORIGIN,
+	rotateScale2D,
+	addPos,
+	rotateScaleRaw2D,
+	subPos,
+} from "@/common";
 import { WithImageInfo } from ".";
+
+type Angle = {
+	/** Angle in radian */
+	rad: number;
+
+	/** Cached cos */
+	cos: number;
+
+	/** Cached sin */
+	sin: number;
+};
 
 /** An object contains display information */
 export type WithDisplaySignal = {
@@ -14,13 +32,13 @@ export type WithDisplaySignal = {
 	setZoom: Setter<number>;
 
 	/** Angle in radian */
-	angle: Accessor<number>;
-	setAngle: Setter<number>;
+	angle: Accessor<Angle>;
+	setAngle: Setter<Angle>;
 
 	/** Saved transform */
 	savedScroll: Pos;
 	savedZoom: number;
-	savedAngle: number;
+	savedAngle: Angle;
 };
 
 export const installDisplaySignal = <T extends object>(
@@ -28,7 +46,11 @@ export const installDisplaySignal = <T extends object>(
 ): T & WithDisplaySignal => {
 	const [scroll, setScroll] = createSignal<Pos>({ ...ORIGIN });
 	const [zoom, setZoom] = createSignal(8);
-	const [angle, setAngle] = createSignal(0);
+	const [angle, setAngle] = createSignal({
+		rad: 0,
+		cos: 1,
+		sin: 0,
+	});
 	return Object.assign(target, {
 		scroll,
 		setScroll,
@@ -43,20 +65,28 @@ export const installDisplaySignal = <T extends object>(
 };
 
 /**
+ * Rotate and scale the display by the center.
+ */
+export const updateAngle = (z: WithDisplaySignal, rad: number) => {
+	const cos = Math.cos(rad);
+	const sin = Math.sin(rad);
+	z.setAngle({ rad, cos, sin });
+};
+
+/**
  * Calculate the invert transform position
  *
  * @param z State
- * @param x X position
- * @param y Y position
+ * @param p Pos
  */
-export const invertDisplayTransform = (
-	z: WithDisplaySignal,
-	x: number,
-	y: number,
-): [number, number] => {
-	const s = z.scroll();
-	const zoom = z.zoom();
-	return [(x - s.x) / zoom, (y - s.y) / zoom];
+export const invertDisplayTransform = (z: WithDisplaySignal, p: Pos): Pos => {
+	const angle = z.angle();
+	return rotateScaleRaw2D(
+		angle.cos,
+		-angle.sin,
+		1 / z.zoom(),
+		subPos(p, z.scroll()),
+	);
 };
 
 export const fitDisplayTo = (
@@ -81,9 +111,9 @@ export const fitDisplayTo = (
 };
 
 export const saveDisplayTransform = (z: WithDisplaySignal) => {
-	z.savedScroll = z.scroll();
+	z.savedScroll = { ...z.scroll() };
 	z.savedZoom = z.zoom();
-	z.savedAngle = z.angle();
+	z.savedAngle = { ...z.angle() };
 };
 
 export const restoreDisplayTransform = (z: WithDisplaySignal) => {
@@ -94,15 +124,26 @@ export const restoreDisplayTransform = (z: WithDisplaySignal) => {
 	});
 };
 
+/**
+ * Transform the display.
+ */
 export const transformOverDisplay = (
 	z: WithDisplaySignal,
 	scale: number,
 	angle: number,
 	translate: Pos,
 ): void => {
+	if (scale <= 0) scale = 1;
 	batch(() => {
-		z.setAngle(a => a + angle);
+		z.setAngle(a => {
+			const rad = a.rad + angle;
+			return {
+				rad,
+				cos: Math.cos(rad),
+				sin: Math.sin(rad),
+			};
+		});
 		z.setZoom(z => z * scale);
-		z.setScroll(s => addPos(translate, scaleRotate2D(angle, scale, s)));
+		z.setScroll(s => addPos(translate, rotateScale2D(angle, scale, s)));
 	});
 };

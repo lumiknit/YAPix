@@ -1,6 +1,6 @@
 import { Accessor, Setter, createSignal } from "solid-js";
 
-import { ORIGIN, Pos } from "@/common";
+import { ORIGIN, Pos, addPos } from "@/common";
 
 import { Cursor } from "..";
 
@@ -13,7 +13,10 @@ export type WithCursorSignal = {
 	setCursor: Setter<Cursor>;
 
 	ptrState?: {
+		/** Start position */
 		start: Pos;
+
+		/** Last position */
 		last: Pos;
 	};
 };
@@ -30,12 +33,22 @@ export const installCursorSignal = <T extends object>(
 };
 
 /**
+ * Update both real and brush cursor position.
+ */
+export const updateAllCursorPos = (z: WithCursorSignal, pos: Pos) => {
+	z.setCursor(c => ({ ...c, real: { ...pos }, brush: { ...pos } }));
+};
+
+/**
  * Update only real cursor position.
  */
-export const updateRealCursorPos = (
-	z: WithCursorSignal,
-	x: number,
-	y: number,
-) => {
-	z.setCursor(c => ({ ...c, real: { x, y } }));
+export const updateRealCursorPos = (z: WithCursorSignal, pos: Pos) => {
+	z.setCursor(c => ({ ...c, real: { ...pos } }));
+};
+
+/**
+ * Translate real cursor position.
+ */
+export const moveRealCursorPos = (z: WithCursorSignal, delta: Pos) => {
+	z.setCursor(c => ({ ...c, real: addPos(c.real, delta) }));
 };

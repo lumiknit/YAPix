@@ -1,11 +1,4 @@
-import {
-	Component,
-	onMount,
-	onCleanup,
-	JSX,
-	createMemo,
-	createSignal,
-} from "solid-js";
+import { Component, onMount, onCleanup, JSX, createMemo } from "solid-js";
 
 import { PaintState, initPaintState, stepForPaintState } from ".";
 import Cursor from "./Cursor";
@@ -57,12 +50,11 @@ const Canvas: Component<Props> = props => {
 
 	const canvasTransform = createMemo(() => {
 		const d = props.z.scroll();
-		return `translate(${d.x}px, ${d.y}px) rotate(${props.z.angle()}rad)`;
+		return `translate(${d.x}px, ${d.y}px) rotate(${props.z.angle().rad}rad)`;
 	});
 
 	return (
 		<div ref={props.z.rootRef} class="cv-root">
-			<Cursor z={props.z} />
 			<div
 				tabIndex={-1}
 				class="cv-view"
@@ -75,6 +67,7 @@ const Canvas: Component<Props> = props => {
 						height: `${props.z.size().h * props.z.zoom()}px`,
 					}
 				}>
+				<Cursor z={props.z} />
 				<canvas
 					ref={props.z.tempLayerRef}
 					class="cv-pix"

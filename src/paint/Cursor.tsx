@@ -25,19 +25,17 @@ const Cursor: Component<Props> = props => {
 
 	const realCursorTransform = createMemo(() => {
 		const z = props.z,
-			d = z.scroll(),
 			zoom = z.zoom(),
 			cur = z.cursor(),
-			x = Math.floor(d.x + zoom * cur.real.x),
-			y = Math.floor(d.y + zoom * cur.real.y);
+			x = Math.floor(zoom * cur.real.x),
+			y = Math.floor(zoom * cur.real.y);
 		return `translate(${x}px, ${y}px)`;
 	});
 
 	const brushCursorTransform = createMemo(() => {
 		const pos = getBrushCursorPos(props.z);
-		const d = props.z.scroll();
 		const zoom = props.z.zoom();
-		return `translate(${Math.floor(d.x + zoom * pos.x)}px, ${Math.floor(d.y + zoom * pos.y)}px)`;
+		return `translate(${Math.floor(zoom * pos.x)}px, ${Math.floor(zoom * pos.y)}px)`;
 	});
 	const brushW = createMemo(() => {
 		const bd = getBrush(props.z).shape.bd;
@@ -60,14 +58,14 @@ const Cursor: Component<Props> = props => {
 				class="cv-real-cursor"
 				style={{
 					transform: realCursorTransform() + " translate(-50%, -50%)",
-					"z-index": 2,
+					"z-index": 20,
 				}}
 			/>
 			<div
 				class="cv-cursor"
 				style={{
 					transform: brushCursorTransform(),
-					"z-index": 2,
+					"z-index": 20,
 					"mix-blend-mode": "difference",
 				}}>
 				<svg

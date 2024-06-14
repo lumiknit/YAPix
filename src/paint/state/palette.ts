@@ -77,7 +77,6 @@ export const useColorHSV = (z: WithPaletteSignal, hsv: HSV) => {
  */
 export const useColorFromHistory = (z: WithPaletteSignal, index: number) => {
 	z.setPalette(p => {
-		console.log("index", index, p.history.length);
 		if (index < 0) index = p.history.length + index;
 		if (index < 0 || index >= p.history.length) return p;
 		const color = p.history[index];

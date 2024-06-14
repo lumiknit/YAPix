@@ -1,5 +1,5 @@
 export * from "./brush";
-export * from "./composition";
+export * from "./composited";
 export * from "./config";
 export * from "./cursor";
 export * from "./display";

@@ -3,7 +3,6 @@ import {
 	Boundary,
 	EMPTY_BOUNDARY,
 	boundaryToRect,
-	extendBoundaryByRect,
 	extractCanvasRect,
 	limitBoundaryToOriginRect,
 	putContextToContext,
@@ -14,20 +13,13 @@ import { HistoryManager } from "../action-history";
 import { Action, UpdateImgAction } from "../actions";
 
 import { ERASER_TYPE_TOOLS, PaintConfig } from "..";
-import {
-	drawLineWithCallbacks,
-	polygonTo4SegPath2D,
-	polygonToPath2D,
-} from "../polygon";
 
 import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
 import {
 	clearTempLayer,
-	contextUseToolStyle,
-	getBrush,
 	getBrushPos,
 	updateBrushCursorPos,
-} from "./composition";
+} from "./composited";
 import { WithConfigSignal, installConfigSignal } from "./config";
 import { WithCursorSignal, installCursorSignal } from "./cursor";
 import {
@@ -35,6 +27,7 @@ import {
 	fitDisplayTo,
 	installDisplaySignal,
 } from "./display";
+import { drawIfPointerDown, drawSingleBrush } from "./draw";
 import {
 	WithImageInfo,
 	installImageInfo,
@@ -158,92 +151,8 @@ export const flushTempLayer = (z: PaintState) => {
 };
 
 // --- Rendering
-/**
- * Draw a brush shape at the given position.
- */
-export const drawSingleBrush = (z: PaintState, x: number, y: number) => {
-	const ctx = getTempLayerCtx(z);
-	const brush = getBrush(z);
 
-	ctx.save();
-	contextUseToolStyle(z, ctx);
-	ctx.translate(x, y);
-	ctx.fill(polygonToPath2D(brush.shape));
-	ctx.restore();
-};
-
-/**
- * Draw a middle of freedraw lines.
- */
-const drawFree = (
-	z: PaintState,
-	lastX: number,
-	lastY: number,
-	x: number,
-	y: number,
-) => {
-	const ctx = getTempLayerCtx(z);
-
-	const dx = x - lastX;
-	const dy = y - lastY;
-
-	if (dx * dx + dy * dy < 1.4) return;
-	const fx = Math.floor(x),
-		fy = Math.floor(y);
-	z.ptrState!.last = {
-		x: fx,
-		y: fy,
-	};
-
-	const brush = getBrush(z);
-	const shape = brush.shape;
-	const brushRect = boundaryToRect(shape.bd);
-
-	ctx.save();
-	contextUseToolStyle(z, ctx);
-	let lx = 0,
-		ly = 0;
-	drawLineWithCallbacks(
-		lastX,
-		lastY,
-		fx,
-		fy,
-		(x, y, l) => {
-			console.log(`x=${x}, y=${y}, w=${l}`);
-			ctx.translate(x - lx, y - ly);
-			(lx = x), (ly = y);
-			ctx.fill(polygonTo4SegPath2D(brush.shape, l - 1, 0));
-			z.tempBd = extendBoundaryByRect(z.tempBd, {
-				x: x + brushRect.x,
-				y: y + brushRect.y,
-				w: l - 1 + brushRect.w,
-				h: brushRect.h,
-			});
-		},
-		(y, x, l) => {
-			console.log(`x=${x}, y=${y}, h=${l}`);
-			ctx.translate(x - lx, y - ly);
-			(lx = x), (ly = y);
-			ctx.fill(polygonTo4SegPath2D(brush.shape, 0, l - 1));
-			z.tempBd = extendBoundaryByRect(z.tempBd, {
-				x: x + brushRect.x,
-				y: y + brushRect.y,
-				w: brushRect.w,
-				h: l - 1 + brushRect.h,
-			});
-		},
-	);
-	ctx.restore();
-};
-
-/** Draw if pointer is down */
-const drawIfPointerDown = (z: PaintState) => {
-	if (!z.ptrState) return;
-
-	const pos = getBrushPos(z);
-
-	drawFree(z, z.ptrState.last.x, z.ptrState.last.y, pos.x, pos.y);
-};
+// --- History
 
 /**
  * Action apply helper for history manager
@@ -306,24 +215,26 @@ export const redo = (z: PaintState) => {
 
 // --- Event Handlers
 
-export const handlePointerDown = (z: PaintState) => {
+/**
+ * Handle draw start event.
+ */
+export const handleDrawStart = (z: PaintState) => {
 	const pos = getBrushPos(z);
-
-	const x = Math.floor(pos.x),
-		y = Math.floor(pos.y);
-
+	console.log(pos);
 	z.ptrState = {
 		start: { ...pos },
-		last: { x, y },
+		last: { ...pos },
 	};
 
-	drawSingleBrush(z, x, y);
+	drawIfPointerDown(z);
 };
 
-export const handlePointerUp = (z: PaintState, buttonDown: boolean) => {
-	if (buttonDown) {
-		const pos = getBrushPos(z);
-		drawSingleBrush(z, Math.floor(pos.x), Math.floor(pos.y));
+/**
+ * Handle draw end event.
+ */
+export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
+	if (!cancelled) {
+		drawIfPointerDown(z);
 	}
 
 	z.ptrState = undefined;

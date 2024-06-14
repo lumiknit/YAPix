@@ -44,19 +44,32 @@ export const normPos = (p: Pos): number => Math.hypot(p.x, p.y);
 /**
  * Rotate and scale a 2D point.
  *
+ * @param cos The cos of the angle.
+ * @param sin The sin of the angle.
+ * @param scale The scale factor.
+ * @param p The point to transform.
+ * @returns The transformed point.
+ */
+export const rotateScaleRaw2D = (
+	cos: number,
+	sin: number,
+	scale: number,
+	p: Pos,
+): Pos => ({
+	x: scale * (cos * p.x - sin * p.y),
+	y: scale * (sin * p.x + cos * p.y),
+});
+
+/**
+ * Rotate and scale a 2D point.
+ *
  * @param angle The angle in radian.
  * @param scale The scale factor.
  * @param p The point to transform.
  * @returns The transformed point.
  */
-export const scaleRotate2D = (angle: number, scale: number, p: Pos): Pos => {
-	const cos = scale * Math.cos(angle),
-		sin = scale * Math.sin(angle);
-	return {
-		x: cos * p.x - sin * p.y,
-		y: sin * p.x + cos * p.y,
-	};
-};
+export const rotateScale2D = (angle: number, scale: number, p: Pos): Pos =>
+	rotateScaleRaw2D(Math.cos(angle), Math.sin(angle), scale, p);
 
 // -- Size
 

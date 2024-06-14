@@ -14,7 +14,7 @@ import {
 	Pos,
 	getModifiers,
 	posOnLine,
-	scaleRotate2D,
+	rotateScale2D,
 	subPos,
 } from "@/common";
 
@@ -87,6 +87,9 @@ export type Transform = {
 	scale: number;
 };
 
+/**
+ * Initial transform
+ */
 const INIT_TRANSFORM: Transform = {
 	translate: { ...ORIGIN },
 	scale: 1,
@@ -160,7 +163,11 @@ export type BaseGestureEvent = WithPointerID &
 	};
 
 /** Event for raw pointer event */
-export type PointerGestureEvent = BaseGestureEvent & SinglePointerEventExtra;
+export type PointerGestureEvent = BaseGestureEvent &
+	SinglePointerEventExtra & {
+		type: PointerType;
+		pos: Pos;
+	};
 
 /** Tap gesture event, including multi-finger tap */
 export type TapGestureEvent = BaseGestureEvent & PressEventExtra;
@@ -184,6 +191,12 @@ export type PinchGestureEvent = BaseGestureEvent & Transform;
  */
 export type GestureEventContextParams = {
 	// Configs
+
+	/**
+	 * Whether to prevent default action of the pointer event.
+	 * If not specified, it will be true.
+	 */
+	preventDefault?: boolean;
 
 	/**
 	 * The element to caputre all pointer events if specified.
@@ -214,6 +227,11 @@ export type GestureEventContextParams = {
 	 * Called when a pointer is canceled.
 	 */
 	onPointerCancel?: (e: PointerGestureEvent) => void;
+
+	/**
+	 * Wheel event
+	 */
+	onWheel?: (e: WheelEvent) => void;
 
 	// Touch Handlers
 
@@ -324,6 +342,8 @@ export const createGestureEventContext = (
 	base: GestureEventContextParams,
 ): GestureEventContext => ({
 	...base,
+	preventDefault:
+		base.preventDefault === undefined ? true : base.preventDefault,
 	pointers: new Map(),
 	typePointers: new Map(
 		(["pen", "touch"] as PointerType[]).map(type => [
@@ -416,6 +436,8 @@ export const addGestureListeners = (
 		pressure: e.pressure,
 		tiltX: e.tiltX,
 		tiltY: e.tiltY,
+		type: guessTypeOfPointerEvent(e),
+		pos: extractPointerPos(e),
 	});
 
 	/** Update the position */
@@ -493,8 +515,6 @@ export const addGestureListeners = (
 		g.scale = 1;
 		g.rotate = 0;
 
-		console.log("Reset tr", g.translate);
-
 		const transformEvent = { ...e, ...INIT_TRANSFORM, id: ptr.id };
 
 		if (ptrs === 1) {
@@ -552,7 +572,7 @@ export const addGestureListeners = (
 		g.scale = Math.hypot(dNow.y, dNow.x) / Math.hypot(dStart.y, dStart.x);
 
 		// Translate. The center of two pointers.
-		g.translate = subPos(cNow, scaleRotate2D(g.rotate, g.scale, cStart));
+		g.translate = subPos(cNow, rotateScale2D(g.rotate, g.scale, cStart));
 
 		return {
 			...e,
@@ -632,6 +652,7 @@ export const addGestureListeners = (
 		const rawEvent = createRawPointerEvent(e);
 
 		if (!safeEventCall("onPointerDown", rawEvent)) return;
+		if (ctx.preventDefault) e.preventDefault();
 
 		// Extract pos and type to create pointer object.
 		const pos = extractPointerPos(e),
@@ -704,6 +725,7 @@ export const addGestureListeners = (
 		// Trigger the raw pointer event.
 		const rawEvent = createRawPointerEvent(e);
 		safeEventCall("onPointerMove", rawEvent);
+		if (ctx.preventDefault) e.preventDefault();
 
 		// Find the pointer. If not found, no more thing to do.
 		const ptr = ctx.pointers.get(e.pointerId);
@@ -758,6 +780,7 @@ export const addGestureListeners = (
 	const pointerReleaseHandler = (cancel: boolean) => (e: PointerEvent) => {
 		const rawEvent = createRawPointerEvent(e);
 		safeEventCall(cancel ? "onPointerCencel" : "onPointerUp", rawEvent);
+		if (ctx.preventDefault) e.preventDefault();
 
 		// If the pointer is not found, do nothing for gesture.
 		const ptr = ctx.pointers.get(e.pointerId);
@@ -773,10 +796,12 @@ export const addGestureListeners = (
 	// Add listeners
 	for (const key in handlers) {
 		elem.addEventListener(key, handlers[key] as any);
+		if (ctx.onWheel) elem.addEventListener("wheel", ctx.onWheel);
 	}
 	return () => {
 		for (const key in handlers) {
 			elem.removeEventListener(key, handlers[key] as any);
+			if (ctx.onWheel) elem.removeEventListener("wheel", ctx.onWheel);
 		}
 	};
 };

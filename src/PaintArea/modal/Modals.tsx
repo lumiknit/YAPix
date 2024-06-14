@@ -9,6 +9,7 @@ import LayersModal from "./LayersModal";
 import ModalBase, { ModalPosition } from "./ModalBase";
 import PaletteModal from "./PaletteModal";
 import SettingsModal from "./SettingsModal";
+import ViewModal from "./ViewModal";
 
 /**
  * Create a switch for a modal that can be shown or hidden.
@@ -44,7 +45,8 @@ export type ModalTypes =
 	| "brush"
 	| "drawShape"
 	| "layers"
-	| "settings";
+	| "settings"
+	| "view";
 export const MODAL_INFO: {
 	type: ModalTypes;
 	position: ModalPosition;
@@ -74,6 +76,11 @@ export const MODAL_INFO: {
 		type: "settings",
 		position: "right",
 		component: SettingsModal,
+	},
+	{
+		type: "view",
+		position: "center",
+		component: ViewModal,
 	},
 ];
 

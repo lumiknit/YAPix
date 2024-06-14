@@ -7,6 +7,7 @@ import {
 	TbArrowBackUp,
 	TbArrowBigDown,
 	TbArrowForwardUp,
+	TbArtboard,
 	TbBoxMultiple,
 	TbBrush,
 	TbColorPicker,
@@ -14,7 +15,15 @@ import {
 	TbSelectAll,
 	TbSettings,
 } from "solid-icons/tb";
-import { PaintState, ToolType, changeCurrentTool, redo, undo } from "../paint";
+import {
+	PaintState,
+	ToolType,
+	changeCurrentTool,
+	handleDrawStart,
+	handleDrawEnd,
+	redo,
+	undo,
+} from "../paint";
 import ToolButton from "./ToolButton";
 import { DRAW_SHAPE_ICON } from "./draw-shape";
 import { ModalSwitches, ModalTypes } from "./modal/Modals";
@@ -42,6 +51,11 @@ const BottomToolPanel: Component<Props> = props => {
 
 	return (
 		<div class="p-tool-panel">
+			<div class="p-tool-row p-tr-util">
+				<ToolButton onClick={openModalHandler("view")}>
+					<TbArtboard />
+				</ToolButton>
+			</div>
 			<div class="p-tool-row p-tr-util">
 				<div
 					class="p-tool-color-preview"
@@ -89,7 +103,18 @@ const BottomToolPanel: Component<Props> = props => {
 					<Dynamic component={DRAW_SHAPE_ICON[props.z.drawShape()]} />
 				</ToolButton>
 			</div>
-			<div class="p-tool-row p-tr-dot">
+			<div
+				class="p-tool-row p-tr-dot"
+				onPointerDown={e => {
+					// Capture
+					e.preventDefault();
+					e.currentTarget.setPointerCapture(e.pointerId);
+					handleDrawStart(props.z);
+				}}
+				onPointerUp={e => {
+					e.currentTarget.releasePointerCapture(e.pointerId);
+					handleDrawEnd(props.z);
+				}}>
 				<button class="p-tool-btn p-dot-btn">
 					<TbArrowBigDown /> DOT!
 				</button>
