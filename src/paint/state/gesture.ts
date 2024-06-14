@@ -10,6 +10,7 @@ import {
 	transformOverDisplay,
 } from ".";
 import { addPos } from "@/common";
+import toast from "solid-toast";
 
 export const createPaintGestureContext = (
 	z: PaintState,

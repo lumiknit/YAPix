@@ -27,8 +27,6 @@ import {
  */
 export type PointerType = "pen" | "touch";
 
-export const POINTER_TYPES = ["pen", "touch"] as const;
-
 /**
  * Gesture event type.
  * - done: The state that no more gesture can be handled. This is a kind of terminal state.
@@ -328,7 +326,10 @@ export const createGestureEventContext = (
 	...base,
 	pointers: new Map(),
 	typePointers: new Map(
-		POINTER_TYPES.map(type => [type, new Map<PointerID, Pointer>()]),
+		(["pen", "touch"] as PointerType[]).map(type => [
+			type,
+			new Map<PointerID, Pointer>(),
+		]),
 	),
 });
 
@@ -370,6 +371,28 @@ export const addGestureListeners = (
 	const handlers: { [key: string]: (e: PointerEvent) => void } = {};
 
 	/**
+	 * Call the event handler safely and return wheter the event is handled.
+	 *
+	 * @param name The name of the event handler.
+	 * @param e The event object.
+	 * @returns True if the event is handled. False otherwise.
+	 */
+	const safeEventCall = <T extends BaseGestureEvent>(
+		name: string,
+		e: T,
+	): boolean => {
+		try {
+			const handler = (ctx as any)[name];
+			if (handler) {
+				return handler(e) !== false;
+			}
+		} catch (e) {
+			console.warn("Error: " + name, ctx, e);
+		}
+		return false;
+	};
+
+	/**
 	 * Convert the pointer event to raw pointer event.
 	 */
 	const baseGestureEventFromPointer = (
@@ -399,10 +422,7 @@ export const addGestureListeners = (
 	const updatePointerPosition = (ptr: Pointer, e: PointerEvent) => {
 		const lastPos = ptr.pos;
 		ptr.pos = extractPointerPos(e);
-		ptr.delta = {
-			x: ptr.pos.x - lastPos.x,
-			y: ptr.pos.y - lastPos.y,
-		};
+		ptr.delta = subPos(ptr.pos, lastPos);
 	};
 
 	/**
@@ -414,7 +434,7 @@ export const addGestureListeners = (
 		try {
 			switch (g.type) {
 				case "drag":
-					ctx.onDragEnd?.({
+					safeEventCall<DragGestureEvent>("onDragEnd", {
 						...baseGestureEventFromPointer(ptr.id, Date.now()),
 						translate: g.translate,
 						pressure: 0,
@@ -423,7 +443,7 @@ export const addGestureListeners = (
 					});
 					break;
 				case "pinch":
-					ctx.onPinchEnd?.({
+					safeEventCall<PinchGestureEvent>("onPinchEnd", {
 						...baseGestureEventFromPointer(ptr.id, Date.now()),
 						scale: g.scale,
 						rotate: g.rotate,
@@ -450,13 +470,8 @@ export const addGestureListeners = (
 			...baseGestureEventFromPointer(ptr.id, ptr.timeStamp),
 			count: ctx.gesture.maxPointers,
 		};
-		try {
-			if (ctx.onLongPress && ctx.onLongPress(e) === true) {
-				// Handled. Change the gesture state to done.
-				markGestureDone(ptr);
-			}
-		} catch (e) {
-			console.warn("Error: onLongPress", ctx, e);
+		if (safeEventCall("onLongPress", e)) {
+			markGestureDone(ptr);
 		}
 	};
 
@@ -465,9 +480,7 @@ export const addGestureListeners = (
 			type,
 			downTS: ts,
 			maxPointers: ctx.pointers.size,
-			translate: ORIGIN,
-			scale: 1,
-			rotate: 0,
+			...INIT_TRANSFORM,
 		});
 	};
 
@@ -486,23 +499,11 @@ export const addGestureListeners = (
 
 		if (ptrs === 1) {
 			// Drag
-			try {
-				if (!ctx.onDragStart || ctx.onDragStart(transformEvent) === false) {
-					return;
-				}
-			} catch (e) {
-				console.warn("Error: onDragStart", ctx, e);
-			}
+			if (!safeEventCall("onDragStart", transformEvent)) return;
 			g.type = "drag";
 		} else {
 			// Pinch
-			try {
-				if (!ctx.onPinchStart || ctx.onPinchStart(transformEvent) === false) {
-					return;
-				}
-			} catch (e) {
-				console.warn("Error: onPinchStart", ctx, e);
-			}
+			if (!safeEventCall("onPinchStart", transformEvent)) return;
 			g.type = "pinch";
 		}
 		g.ptrType = ptr.type;
@@ -588,14 +589,10 @@ export const addGestureListeners = (
 							markGestureDone(ptr);
 						}
 					} else if (ctx.onTap) {
-						try {
-							ctx.onTap({
-								...rawEvent,
-								count: g.maxPointers,
-							});
-						} catch (e) {
-							console.warn("Error: onTap", ctx, e);
-						}
+						safeEventCall("onTap", {
+							...rawEvent,
+							count: g.maxPointers,
+						});
 					}
 					break;
 				case "pinch":
@@ -634,14 +631,7 @@ export const addGestureListeners = (
 		// First of all, try to use raw pointer event.
 		const rawEvent = createRawPointerEvent(e);
 
-		try {
-			if (ctx.onPointerDown && ctx.onPointerDown(rawEvent) === false) {
-				// Pointer event is not handled.
-				return;
-			}
-		} catch (e) {
-			console.warn("Error: onPointerDown", ctx, e);
-		}
+		if (!safeEventCall("onPointerDown", rawEvent)) return;
 
 		// Extract pos and type to create pointer object.
 		const pos = extractPointerPos(e),
@@ -713,11 +703,7 @@ export const addGestureListeners = (
 	handlers.pointermove = (e: PointerEvent) => {
 		// Trigger the raw pointer event.
 		const rawEvent = createRawPointerEvent(e);
-		try {
-			ctx.onPointerMove?.(rawEvent);
-		} catch (e) {
-			console.warn("Error: onPointerMove", ctx, e);
-		}
+		safeEventCall("onPointerMove", rawEvent);
 
 		// Find the pointer. If not found, no more thing to do.
 		const ptr = ctx.pointers.get(e.pointerId);
@@ -730,9 +716,9 @@ export const addGestureListeners = (
 
 		// Check if pointer is moved over the threshold.
 		if (!ptr.moved) {
-			const dx = ptr.pos.x - ptr.initPos.x,
-				dy = ptr.pos.y - ptr.initPos.y;
-			ptr.moved = dx * dx + dy * dy > NON_DRAG_THRESHOLD * NON_DRAG_THRESHOLD;
+			const d = subPos(ptr.pos, ptr.initPos);
+			ptr.moved =
+				d.x * d.x + d.y * d.y > NON_DRAG_THRESHOLD * NON_DRAG_THRESHOLD;
 		}
 
 		// If no gesute for any reason, or the pointer is not moved,
@@ -771,11 +757,7 @@ export const addGestureListeners = (
 
 	const pointerReleaseHandler = (cancel: boolean) => (e: PointerEvent) => {
 		const rawEvent = createRawPointerEvent(e);
-		try {
-			ctx.onPointerUp?.(rawEvent);
-		} catch (e) {
-			console.warn("Error: onPointerUp", ctx, e);
-		}
+		safeEventCall(cancel ? "onPointerCencel" : "onPointerUp", rawEvent);
 
 		// If the pointer is not found, do nothing for gesture.
 		const ptr = ctx.pointers.get(e.pointerId);
