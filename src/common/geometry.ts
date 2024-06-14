@@ -1,3 +1,5 @@
+// -- Vec2D
+
 /** 2D position */
 export type Pos = {
 	x: number;
@@ -6,6 +8,57 @@ export type Pos = {
 
 /** Origin Pos. DO NOT USE IT DIRECTLY. instead, used {...ORIGIN} */
 export const ORIGIN: Pos = { x: 0, y: 0 };
+
+/**
+ * Add two vectors.
+ */
+export const addPos = (a: Pos, b: Pos): Pos => ({
+	x: a.x + b.x,
+	y: a.y + b.y,
+});
+
+/**
+ * Return the position on the line between a and b at r.
+ * If r = 0, return a. If r = 1, return b.
+ */
+export const posOnLine = (a: Pos, b: Pos, r: number): Pos => ({
+	x: a.x * (1 - r) + b.x * r,
+	y: a.y * (1 - r) + b.y * r,
+});
+
+/**
+ * Subtract two vectors.
+ */
+export const subPos = (a: Pos, b: Pos): Pos => ({
+	x: a.x - b.x,
+	y: a.y - b.y,
+});
+
+/**
+ * Calculate norm of a vector.
+ */
+export const normPos = (p: Pos): number => Math.hypot(p.x, p.y);
+
+// -- Linear Transforms
+
+/**
+ * Rotate and scale a 2D point.
+ *
+ * @param angle The angle in radian.
+ * @param scale The scale factor.
+ * @param p The point to transform.
+ * @returns The transformed point.
+ */
+export const scaleRotate2D = (angle: number, scale: number, p: Pos): Pos => {
+	const cos = Math.cos(angle),
+		sin = Math.sin(angle);
+	return {
+		x: scale * (cos * p.x - sin * p.y),
+		y: scale * (sin * p.x + cos * p.y),
+	};
+};
+
+// -- Size
 
 /** 2D Size */
 export type Size = {

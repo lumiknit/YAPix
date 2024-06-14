@@ -2,9 +2,16 @@
  * @module composition
  * @description PaintState methods, which does not need full of PaintState.
  */
-import { batch } from "solid-js";
+import { batch, enableExternalSource } from "solid-js";
 
-import { CanvasCtx2D, Pos, Rect, rgba, rgbaForStyle } from "@/common";
+import {
+	CanvasCtx2D,
+	Pos,
+	Rect,
+	rgba,
+	rgbaForStyle,
+	scaleRotate2D,
+} from "@/common";
 import { ERASER_TYPE_TOOLS, ToolType } from "..";
 
 import {
@@ -12,6 +19,7 @@ import {
 	WithBrushSetSignal,
 	WithConfigSignal,
 	WithCursorSignal,
+	WithDisplaySignal,
 	WithImageInfo,
 	WithPaletteSignal,
 	WithToolSettingsSignal,
@@ -115,6 +123,11 @@ export const changeCurrentTool = (
 	});
 };
 
+/**
+ * Set the brush shape (size and roundness) for the current tool.
+ * @param size The size of the brush, in pixels.
+ * @param round Whether the brush is round.
+ */
 export const setBrushShapeForCurrentTool = (
 	z: WithBrushSetSignal & WithToolSettingsSignal,
 	size: number,
@@ -150,6 +163,40 @@ export const contextUseToolStyle = (
 			break;
 		// Otherwise, do not need to update settings.
 	}
+};
+
+// --- Display
+
+export const rotateScaleDisplayByCenter = (
+	z: WithImageInfo & WithDisplaySignal,
+	rotate: number,
+	scale: number,
+) => {
+	const sz = z.size();
+	const center = {
+		x: sz.w / 2,
+		y: sz.h / 2,
+	};
+
+	const oldZoom = z.zoom(),
+		oldAngle = z.angle(),
+		newZoom = oldZoom * scale,
+		newAngle = oldAngle + rotate;
+
+	const oldCenter = scaleRotate2D(oldAngle, oldZoom, center);
+	const newCenter = scaleRotate2D(newAngle, newZoom, center);
+
+	// Set the values
+	batch(() => {
+		z.setZoom(newZoom);
+		z.setAngle(newAngle);
+		z.setScroll(s => {
+			return {
+				x: s.x + oldCenter.x - newCenter.x,
+				y: s.y + oldCenter.y - newCenter.y,
+			};
+		});
+	});
 };
 
 // --- Rendering

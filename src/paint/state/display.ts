@@ -1,6 +1,6 @@
 import { Accessor, Setter, batch, createSignal } from "solid-js";
 
-import { Pos, ORIGIN } from "@/common";
+import { Pos, ORIGIN, scaleRotate2D, addPos } from "@/common";
 import { WithImageInfo } from ".";
 
 /** An object contains display information */
@@ -98,16 +98,11 @@ export const transformOverDisplay = (
 	z: WithDisplaySignal,
 	scale: number,
 	angle: number,
-	{ x, y }: Pos,
+	translate: Pos,
 ): void => {
-	const cos = Math.cos(angle),
-		sin = Math.sin(angle);
 	batch(() => {
 		z.setAngle(a => a + angle);
 		z.setZoom(z => z * scale);
-		z.setScroll(s => ({
-			x: x + scale * (cos * s.x - sin * s.y),
-			y: y + scale * (sin * s.x + cos * s.y),
-		}));
+		z.setScroll(s => addPos(translate, scaleRotate2D(angle, scale, s)));
 	});
 };

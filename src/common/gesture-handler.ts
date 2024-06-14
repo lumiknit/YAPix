@@ -8,7 +8,15 @@
  * - Touch: A pointer which can multitouch, however may not have pressure. Common touches are examples.
  */
 
-import { Modifiers, ORIGIN, Pos, getModifiers } from "@/common";
+import {
+	Modifiers,
+	ORIGIN,
+	Pos,
+	getModifiers,
+	posOnLine,
+	scaleRotate2D,
+	subPos,
+} from "@/common";
 
 // -- Enums and Constants
 
@@ -509,10 +517,7 @@ export const addGestureListeners = (
 		const g = ctx.gesture!;
 		const ptr = ctx.pointers.get(e.id)!;
 		// Just add the translate
-		g.translate = {
-			x: ptr.pos.x - ptr.dragStartPos.x,
-			y: ptr.pos.y - ptr.dragStartPos.y,
-		};
+		g.translate = subPos(ptr.pos, ptr.dragStartPos);
 		return {
 			...e,
 			translate: { ...g.translate },
@@ -532,30 +537,22 @@ export const addGestureListeners = (
 			p2Now = p2.pos;
 
 		// Difference of two pointers
-		const dxStart = p1Start.x - p2Start.x,
-			dyStart = p1Start.y - p2Start.y,
-			dxNow = p1Now.x - p2Now.x,
-			dyNow = p1Now.y - p2Now.y;
+		const dStart = subPos(p1Start, p2Start),
+			dNow = subPos(p1Now, p2Now);
 
 		// Center of two pointers
-		const cxStart = (p1Start.x + p2Start.x) / 2,
-			cyStart = (p1Start.y + p2Start.y) / 2,
-			cxNow = (p1Now.x + p2Now.x) / 2,
-			cyNow = (p1Now.y + p2Now.y) / 2;
+		const cStart = posOnLine(p1Start, p2Start, 0.5),
+			cNow = posOnLine(p1Now, p2Now, 0.5);
 
 		// Rotation. The angle between two pointers.
-		g.rotate = Math.atan2(dyNow, dxNow) - Math.atan2(dyStart, dxStart);
+		g.rotate = Math.atan2(dNow.y, dNow.x) - Math.atan2(dStart.y, dStart.x);
 
 		// Scale. The distance between two pointers.
-		g.scale = Math.hypot(dxNow, dyNow) / Math.hypot(dxStart, dyStart);
+		g.scale = Math.hypot(dNow.y, dNow.x) / Math.hypot(dStart.y, dStart.x);
 
 		// Translate. The center of two pointers.
-		const cosRotate = Math.cos(g.rotate),
-			sinRotate = Math.sin(g.rotate);
-		g.translate = {
-			x: cxNow - g.scale * (cosRotate * cxStart - sinRotate * cyStart),
-			y: cyNow - g.scale * (sinRotate * cxStart + cosRotate * cyStart),
-		};
+		g.translate = subPos(cNow, scaleRotate2D(g.rotate, g.scale, cStart));
+
 		return {
 			...e,
 			translate: { ...g.translate },

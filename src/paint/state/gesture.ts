@@ -5,9 +5,11 @@ import {
 import {
 	PaintState,
 	restoreDisplayTransform,
+	rotateScaleDisplayByCenter,
 	saveDisplayTransform,
 	transformOverDisplay,
 } from ".";
+import { addPos } from "@/common";
 
 export const createPaintGestureContext = (
 	z: PaintState,
@@ -18,16 +20,15 @@ export const createPaintGestureContext = (
 		onPointerMove(e) {},
 		onPointerUp(e) {},
 		onPointerCancel(e) {},
-		onTap(e) {},
+		onTap(e) {
+			rotateScaleDisplayByCenter(z, 0.5, 1);
+		},
 		onLongPress(e) {},
 		onDragStart(e) {
 			saveDisplayTransform(z);
 		},
 		onDragMove(e) {
-			z.setScroll({
-				x: z.savedScroll.x + e.translate.x,
-				y: z.savedScroll.y + e.translate.y,
-			});
+			z.setScroll(s => addPos(z.savedScroll, e.translate));
 		},
 		onDragEnd(e) {},
 
