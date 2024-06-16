@@ -28,11 +28,6 @@ export type PaintConfigCanvasBackground = {
  */
 export type PaintConfig = {
 	/**
-	 * fps for rendering / brush processing.
-	 */
-	fps?: number;
-
-	/**
 	 * Action for canvas click & drag.
 	 * - "moveTouchOnly": If touch event, work as "move" (Default)
 	 * - "draw": Draw (brush / shape / etc.)
@@ -64,9 +59,6 @@ export type PaintConfig = {
  * It guarantees that all values cannot be undefined, and some values are pre-calculated for performance.
  */
 export type CompiledPaintConfig = PaintConfig & {
-	/** Interval of each frame in ms */
-	fpsMS: number;
-
 	/** Canvas Pen Action */
 	canvasPenAction: "draw" | "move";
 
@@ -92,7 +84,6 @@ export const compilePaintConfig = (
 ): CompiledPaintConfig => {
 	return {
 		...config,
-		fpsMS: 1000 / (config.fps || 10),
 		canvasPenAction: config.canvasClickAction === "move" ? "move" : "draw",
 		canvasTouchAction: config.canvasClickAction === "draw" ? "draw" : "move",
 		brushFollowFactor: Math.pow(0.01, config.brushStabilization || 0),

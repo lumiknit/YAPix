@@ -16,15 +16,20 @@ const ViewModal: Component<Props> = props => {
 	return (
 		<>
 			<div class="pa-modal-title">View</div>
-			Zoom
+
+			<div class="pam-item">
+				<span class="label"> Zoom </span>
+				<input type="number" value={Math.floor(props.z.zoom() * 100)} />
+			</div>
 			<input
 				type="range"
-				min="0.1"
-				max="100"
-				step="0.1"
-				value={props.z.zoom()}
+				min="-4"
+				max="10"
+				step="0.25"
+				value={Math.log2(props.z.zoom())}
 				onInput={e => {
-					let z = +e.currentTarget.value;
+					let pow = +e.currentTarget.value;
+					let z = Math.pow(2, pow);
 					// Snap
 					if (Math.abs(z - Math.round(z)) < 0.25) {
 						z = Math.round(z);
@@ -32,9 +37,15 @@ const ViewModal: Component<Props> = props => {
 					rotateScaleDisplayByCenter(props.z, 0, z / props.z.zoom());
 				}}
 			/>
-			{props.z.zoom()}
-			<br />
-			Rotate
+
+			<div class="pam-item">
+				<span class="label"> Rotate </span>
+				<input
+					type="number"
+					value={Math.round(props.z.angle().rad * (180 / Math.PI))}
+				/>
+			</div>
+
 			<input
 				type="range"
 				min={-Math.PI}
@@ -54,7 +65,6 @@ const ViewModal: Component<Props> = props => {
 					);
 				}}
 			/>
-			{Math.round(props.z.angle().rad * (180 / Math.PI))}
 		</>
 	);
 };

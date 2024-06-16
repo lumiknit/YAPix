@@ -1,4 +1,4 @@
-import { Component, For, createSignal } from "solid-js";
+import { Component, For } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { DrawShape, PaintState } from "@/paint";
@@ -17,10 +17,12 @@ const DrawShapeModal: Component<Props> = props => {
 			<div class="pa-modal-title">Draw Shape</div>
 			<For each={shapes}>
 				{shapeName => (
-					<button onClick={() => props.z.setDrawShape(shapeName)}>
+					<div
+						class={`pam-item ${props.z.drawShape() === shapeName ? "selected" : ""}`}
+						onClick={() => props.z.setDrawShape(shapeName)}>
+						<span class="label">{shapeName}</span>
 						<Dynamic component={DRAW_SHAPE_ICON[shapeName]} />
-						{shapeName}
-					</button>
+					</div>
 				)}
 			</For>
 		</>

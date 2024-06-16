@@ -1,5 +1,7 @@
 import { Component } from "solid-js";
 
+import "./common.scss";
+
 export type ModalPosition = "left" | "right" | "bottom" | "center";
 
 type Props = {

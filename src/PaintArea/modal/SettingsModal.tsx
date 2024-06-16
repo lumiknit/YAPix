@@ -14,16 +14,18 @@ const SettingsModal: Component<Props> = props => {
 
 			<div> Other </div>
 
-			<button
+			<div
+				class="pam-item"
 				onClick={() => {
 					fitCanvasToRoot(props.z);
 				}}>
 				Reset Zoom
-			</button>
+			</div>
 
 			<div> Files </div>
 
-			<button
+			<div
+				class="pam-item"
 				onClick={() => {
 					const ctx = mergeLayersWithNewCtx(props.z, 4);
 					const blob = ctxToBlob(ctx);
@@ -37,7 +39,7 @@ const SettingsModal: Component<Props> = props => {
 					});
 				}}>
 				Export
-			</button>
+			</div>
 
 			<hr />
 

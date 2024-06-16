@@ -10,6 +10,7 @@ import {
 	TbArtboard,
 	TbBoxMultiple,
 	TbBrush,
+	TbClick,
 	TbColorPicker,
 	TbEraser,
 	TbSelectAll,
@@ -116,7 +117,7 @@ const BottomToolPanel: Component<Props> = props => {
 					handleDrawEnd(props.z);
 				}}>
 				<button class="p-tool-btn p-dot-btn">
-					<TbArrowBigDown /> DOT!
+					<TbClick /> DOT
 				</button>
 			</div>
 		</div>

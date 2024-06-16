@@ -74,9 +74,12 @@ button.p-dot-btn {
 
 	display: flex;
 	justify-content: center;
-	align-items: center;
+	align-items: stretch;
+	gap: 0.5em;
 
+	font-size: 1.25rem;
 	font-weight: bold;
+	line-height: 1;
 
 	&:hover {
 		color: var(--c-fg-bold);

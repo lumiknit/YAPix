@@ -6,6 +6,7 @@ import {
 	setBrushShape,
 	setBrushShapeForCurrentTool,
 } from "@/paint";
+import CheckBox from "@/components/CheckBox";
 
 type Props = {
 	z: PaintState;
@@ -21,11 +22,27 @@ const BrushModal: Component<Props> = props => {
 		setBrushShapeForCurrentTool(props.z, size(), round());
 	};
 
+	const toggleRound = () => {
+		setRound(v => !v);
+		updateBrush();
+	};
+
 	return (
 		<>
 			<div class="pa-modal-title">Brush</div>
 
-			<div> Brush Size</div>
+			<div class="pam-item">
+				<span class="label"> Brush Size </span>
+				<input
+					type="number"
+					value={brush().size.w}
+					onInput={e => {
+						setSize(parseInt((e.target as HTMLInputElement).value));
+						updateBrush();
+					}}
+				/>
+			</div>
+
 			<input
 				type="range"
 				min="1"
@@ -36,25 +53,12 @@ const BrushModal: Component<Props> = props => {
 					updateBrush();
 				}}
 			/>
-			<input
-				type="number"
-				value={brush().size.w}
-				onInput={e => {
-					setSize(parseInt((e.target as HTMLInputElement).value));
-					updateBrush();
-				}}
-			/>
 
-			<label>
-				<input
-					type="checkbox"
-					checked={round()}
-					onChange={e => {
-						setRound((e.target as HTMLInputElement).checked);
-						updateBrush();
-					}}
-				/>
-				Round Brush
+			<hr />
+
+			<label class="pam-item" onClick={toggleRound}>
+				<span class="label"> Round Brush </span>
+				<CheckBox checked={round()} />
 			</label>
 		</>
 	);

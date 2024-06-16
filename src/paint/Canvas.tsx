@@ -15,21 +15,28 @@ const Canvas: Component<Props> = props => {
 	// Set main loop
 
 	let removeGestureEvents: undefined | (() => void) = undefined;
-	let mainLoop: number = 0;
+	let mainLoopRunning: boolean | undefined;
+
+	const mainLoopCallback = () => {
+		stepForPaintState(props.z);
+		if (mainLoopRunning) {
+			requestAnimationFrame(mainLoopCallback);
+		}
+	};
+
 	onMount(() => {
 		initPaintState(props.z);
 
 		const gestureCtx = createPaintGestureContext(props.z);
 		removeGestureEvents = addGestureListeners(props.z.rootRef!, gestureCtx);
 
-		mainLoop = setInterval(
-			() => stepForPaintState(props.z),
-			1000 / (props.z.config().fps || 60),
-		);
+		mainLoopRunning = true;
+		requestAnimationFrame(mainLoopCallback);
 	});
+
 	onCleanup(() => {
 		removeGestureEvents?.();
-		clearTimeout(mainLoop);
+		mainLoopRunning = false;
 	});
 
 	const canvasStyle = (

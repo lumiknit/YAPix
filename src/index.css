@@ -27,8 +27,12 @@
 	--c-prim: #76cd5c;
 	--c-prim-dim: #a3de90;
 	--c-prim-bold: #3b7d26;
+	--c-prim-contrast: #fff;
 
-	--c-modal-bg: #eee;
+	--c-modal-bg: #f2f2f2;
+	--c-modal-item-bg: #f9f9f9;
+	--c-modal-item-bg-hover: #fff;
+	--c-modal-input-bg: #f9f9f9;
 
 	--c-tool-btn-hover: #ccc;
 	--c-tool-btn-active: #bbb;
@@ -45,8 +49,10 @@
 		--c-prim: #3b7d26;
 		--c-prim-dim: #5faa4a;
 		--c-prim-bold: #76cd5c;
+		--c-prim-contrast: #fff;
 
 		--c-modal-bg: #444;
+		--c-modal-input-bg: #666;
 
 		--c-tool-btn-hover: #777;
 		--c-tool-btn-active: #888;
@@ -58,5 +64,6 @@ body {
 }
 
 * {
+	font-size: 1rem;
 	touch-action: manipulation;
 }

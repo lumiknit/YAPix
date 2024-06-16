@@ -1,4 +1,4 @@
-import { Accessor, Component, For, Setter, Show, createSignal } from "solid-js";
+import { Component, For, Show, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { PaintState } from "@/paint";
