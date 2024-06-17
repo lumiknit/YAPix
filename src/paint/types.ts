@@ -31,7 +31,6 @@ export type DrawShape =
 	| "free"
 	| "rect"
 	| "fillRect"
-	| "ellipse"
 	| "fillEllipse"
 	| "line"
 	| "fill";

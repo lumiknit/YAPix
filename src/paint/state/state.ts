@@ -15,11 +15,7 @@ import { Action, UpdateImgAction } from "../actions";
 import { ERASER_TYPE_TOOLS, PaintConfig } from "..";
 
 import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
-import {
-	clearTempLayer,
-	getBrushPos,
-	updateBrushCursorPos,
-} from "./composited";
+import { clearTempLayer, updateBrushCursorPos } from "./composited";
 import { WithConfigSignal, installConfigSignal } from "./config";
 import { WithCursorSignal, installCursorSignal } from "./cursor";
 import {
@@ -27,7 +23,7 @@ import {
 	fitDisplayTo,
 	installDisplaySignal,
 } from "./display";
-import { drawIfPointerDown, drawSingleBrush } from "./draw";
+import { drawIfPointerDown } from "./draw";
 import {
 	WithImageInfo,
 	installImageInfo,
@@ -219,14 +215,14 @@ export const redo = (z: PaintState) => {
  * Handle draw start event.
  */
 export const handleDrawStart = (z: PaintState) => {
-	const pos = getBrushPos(z);
+	const pos = z.cursor().brush;
 	console.log(pos);
 	z.ptrState = {
 		start: { ...pos },
 		last: { ...pos },
 	};
 
-	drawIfPointerDown(z);
+	drawIfPointerDown(z, true);
 };
 
 /**
@@ -234,7 +230,7 @@ export const handleDrawStart = (z: PaintState) => {
  */
 export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
 	if (!cancelled) {
-		drawIfPointerDown(z);
+		drawIfPointerDown(z, true);
 	}
 
 	z.ptrState = undefined;

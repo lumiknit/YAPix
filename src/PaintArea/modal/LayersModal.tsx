@@ -13,7 +13,7 @@ const LayersModal: Component<Props> = props => {
 
 			<For each={props.z.layers}>
 				{(l, idx) => (
-					<div class="pa-layer">
+					<div class="pam-item pa-layer">
 						{l.name + (props.z.focusedLayer === idx() ? " (focused)" : "")}
 					</div>
 				)}

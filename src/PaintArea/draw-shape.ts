@@ -14,7 +14,7 @@ export const DRAW_SHAPE_ICON: { [key in DrawShape]: Component<any> } = {
 	free: TbWriting,
 	rect: TbSquare,
 	fillRect: IoSquare,
-	ellipse: TbCircle,
+	//ellipse: TbCircle,
 	fillEllipse: TbCircleFilled,
 	line: TbArrowsHorizontal,
 	fill: TbBucket,

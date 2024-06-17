@@ -5,43 +5,28 @@
 
 import {
 	Pos,
-	boundaryToRect,
-	extendBoundaryByRect,
 	EMPTY_BOUNDARY,
-	ctxToBlob,
 	extendBoundaryByPixel,
+	extendBoundaryByRect,
+	boundaryToRect,
 } from "@/common";
 
 import {
 	drawLineWithCallbacks,
+	drawLineWithCallbacksV2,
 	ellipsePolygon,
-	polygonTo4SegPath2D,
 	polygonToPath2D,
 } from "../polygon";
 
 import {
 	PaintState,
+	clearTempLayer,
 	contextUseToolStyle,
 	getBrush,
-	getBrushPos,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
 } from ".";
 import { ERASER_TYPE_TOOLS } from "..";
-
-/**
- * Draw a brush shape at the given position.
- */
-export const drawSingleBrush = (z: PaintState, x: number, y: number) => {
-	const ctx = getTempLayerCtx(z);
-	const brush = getBrush(z);
-
-	ctx.save();
-	contextUseToolStyle(z, ctx);
-	ctx.translate(x, y);
-	ctx.fill(polygonToPath2D(brush.shape));
-	ctx.restore();
-};
 
 const drawBrushLine = (
 	z: PaintState,
@@ -52,38 +37,17 @@ const drawBrushLine = (
 	ey: number,
 ) => {
 	const brush = getBrush(z);
-	const shape = brush.shape;
-	const brushRect = boundaryToRect(shape.bd);
 
-	let lx = 0,
-		ly = 0;
-
-	drawLineWithCallbacks(
+	drawLineWithCallbacksV2(
 		sx,
 		sy,
 		ex,
 		ey,
-		(x, y, l) => {
-			ctx.translate(x - lx, y - ly);
-			(lx = x), (ly = y);
-			ctx.fill(polygonTo4SegPath2D(brush.shape, l - 1, 0));
-			extendBoundaryByRect(z.tempBd, {
-				x: x + brushRect.x,
-				y: y + brushRect.y,
-				w: l - 1 + brushRect.w,
-				h: brushRect.h,
-			});
-		},
-		(y, x, l) => {
-			ctx.translate(x - lx, y - ly);
-			(lx = x), (ly = y);
-			ctx.fill(polygonTo4SegPath2D(brush.shape, 0, l - 1));
-			extendBoundaryByRect(z.tempBd, {
-				x: x + brushRect.x,
-				y: y + brushRect.y,
-				w: brushRect.w,
-				h: l - 1 + brushRect.h,
-			});
+		brush.size.w,
+		brush.round ? "round" : "square",
+		(x, y, w, h) => {
+			ctx.fillRect(x, y, w, h);
+			extendBoundaryByRect(z.tempBd, { x, y, w, h });
 		},
 	);
 };
@@ -91,22 +55,22 @@ const drawBrushLine = (
 /**
  * Draw a middle of freedraw lines.
  */
-const drawFree = (z: PaintState, x: number, y: number) => {
+const drawFree = (z: PaintState, x: number, y: number, force?: boolean) => {
 	const ctx = getTempLayerCtx(z);
 
 	const lastX = Math.floor(z.ptrState!.last.x),
 		lastY = Math.floor(z.ptrState!.last.y);
 
-	const dx = x - lastX;
-	const dy = y - lastY;
+	const dx = x - lastX - 0.5;
+	const dy = y - lastY - 0.5;
 
-	if (dx * dx + dy * dy < 1.4) return;
+	if (!force && dx * dx + dy * dy < 1.4) return;
 
 	z.ptrState!.last = { x, y };
 
 	ctx.save();
 	contextUseToolStyle(z, ctx);
-	drawBrushLine(z, ctx, lastX, lastY, Math.floor(x), Math.floor(y));
+	drawBrushLine(z, ctx, lastX, lastY, x, y);
 	ctx.restore();
 };
 
@@ -132,7 +96,7 @@ const drawRect = (
 
 	// Clear the previous rectangle
 	const ctx = getTempLayerCtx(z);
-	ctx.clearRect(bd.l, bd.t, bd.r - bd.l + 1, bd.b - bd.t + 1);
+	clearTempLayer(z, boundaryToRect(bd));
 
 	// Draw the new rectangle
 	ctx.save();
@@ -185,27 +149,25 @@ const drawLine = (z: PaintState, pos: Pos) => {
 	const start = z.ptrState!.start;
 	const last = z.ptrState!.last;
 
-	const sx = Math.floor(start.x),
-		sy = Math.floor(start.y);
-	const lx = Math.floor(last.x),
-		ly = Math.floor(last.y);
-	const px = Math.floor(pos.x),
-		py = Math.floor(pos.y);
+	const lx = Math.round(last.x * 2),
+		ly = Math.round(last.y * 2);
+	const px = Math.round(pos.x * 2),
+		py = Math.round(pos.y * 2);
 
 	if (px === lx && py === ly) return;
 
 	const bd = z.tempBd;
 
 	// Clear the previous line
-	const ctx = getTempLayerCtx(z);
-	ctx.clearRect(bd.l, bd.t, bd.r - bd.l + 1, bd.b - bd.t + 1);
+	clearTempLayer(z, boundaryToRect(bd));
 
 	z.tempBd = { ...EMPTY_BOUNDARY };
 
 	// Draw the new line
+	const ctx = getTempLayerCtx(z);
 	ctx.save();
 	contextUseToolStyle(z, ctx);
-	drawBrushLine(z, ctx, sx, sy, px, py);
+	drawBrushLine(z, ctx, start.x, start.y, pos.x, pos.y);
 	ctx.restore();
 
 	z.ptrState!.last = { ...pos };
@@ -295,25 +257,22 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
 };
 
 /** Draw if pointer is down */
-export const drawIfPointerDown = (z: PaintState) => {
+export const drawIfPointerDown = (z: PaintState, force?: boolean) => {
 	if (!z.ptrState) return;
 
-	const pos = getBrushPos(z);
+	const pos = z.cursor().brush;
 
 	const shape = z.drawShape();
 
 	switch (shape) {
 		case "free":
-			drawFree(z, pos.x, pos.y);
+			drawFree(z, pos.x, pos.y, force);
 			break;
 		case "rect":
 			drawRect(z, pos);
 			break;
 		case "fillRect":
 			drawRect(z, pos, true);
-			break;
-		case "ellipse":
-			drawRect(z, pos, true, true);
 			break;
 		case "fillEllipse":
 			drawRect(z, pos, true, true);

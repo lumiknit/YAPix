@@ -803,7 +803,7 @@ export const addGestureListeners = (
 	// Add listeners
 	for (const key in handlers) {
 		elem.addEventListener(key, handlers[key] as any);
-		if (ctx.onWheel) elem.addEventListener("wheel", ctx.onWheel);
+		if (ctx.onWheel) elem.addEventListener("wheel", ctx.onWheel, {});
 	}
 	return () => {
 		for (const key in handlers) {

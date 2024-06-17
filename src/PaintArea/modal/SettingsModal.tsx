@@ -12,6 +12,12 @@ const SettingsModal: Component<Props> = props => {
 		<>
 			<div class="pa-modal-title">Settings / Files</div>
 
+			<div> About </div>
+
+			<a class="pam-item" href="https://github.com/lumiknit/dubu-tl">
+				https://github.com/lumiknit/dubu-tl
+			</a>
+
 			<div> Other </div>
 
 			<div

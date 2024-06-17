@@ -155,6 +155,26 @@ export const rectanglePolygon = (
 		[x + w, y + h],
 		[x, y + h],
 	]);
+
+/**
+ * Create a quad with the given points
+ */
+export const ellipsePixels = (w: number, h: number): number[] => {
+	const xs = [];
+	const cy = (h - 1) / 2,
+		a = w / 2 - 0.1,
+		b = h / 2 - 0.1,
+		zig = w % 2;
+	for (let py = 0; py < b; py++) {
+		const dy = (py - cy) / b,
+			w2 = Math.sqrt(1 - dy * dy) * a;
+		xs.push(Math.round(w2 + zig / 2) * 2 - zig);
+	}
+	const t = xs.slice(0, xs.length - (h % 2));
+	t.reverse();
+	return xs.concat(t);
+};
+
 /**
  * Create an ellipse
  *
@@ -169,25 +189,12 @@ export const ellipsePolygon = (
 	w: number,
 	h: number,
 ): Polygon => {
-	const p: number[] = [],
-		q: number[] = [];
-	// Calculate widths
-	const xb = (w - 1) / 2 + x,
-		cy = (h - 1) / 2,
-		a = w / 2 - 0.1,
-		b = h / 2 - 0.1;
-	for (let py = 0; py < b; py++) {
-		const dy = (py - cy) / b,
-			w2 = Math.sqrt(1 - dy * dy) * a,
-			left = Math.ceil(xb - w2),
-			right = Math.floor(xb + w2) + 1;
-		p.push(left, right);
-		q.push(right, left);
+	const pxs = ellipsePixels(w, h);
+	const p: number[] = [];
+	for (let i = 0; i < pxs.length; i++) {
+		const m = w - pxs[i];
+		p.push(x + m / 2, x + w - m / 2);
 	}
-	// Copy the reversed list
-	if (h % 2 == 1) q.splice(q.length - 2);
-	q.reverse();
-	p.push(...q);
 	return xsToPolygon(p, y);
 };
 
@@ -249,5 +256,146 @@ export const drawLineWithCallbacks = (
 	}
 	if (err < de && x > last) {
 		f(last, y, x - last);
+	}
+};
+
+const _cached_brush_pixels: Map<number, number[]> = new Map();
+
+/**
+ * Draw a pixel-perfect line with the given callback.
+ * The callback is called when a single pixel rectangle is drawn.
+ * The algorithm is based on Bresenham's line algorithm.
+ *
+ * @param x0 The x-coordinate of the start point.
+ * @param y0 The y-coordinate of the start point.
+ * @param x1 The x-coordinate of the end point.
+ * @param y1 The y-coordinate of the end point.
+ * @param strokeWidth The width of the stroke
+ * @param shape The shape of the stroke
+ * @param fillRect The callback to draw a rectangle
+ */
+export const drawLineWithCallbacksV2 = (
+	x0: number,
+	y0: number,
+	x1: number,
+	y1: number,
+	strokeWidth: number,
+	shape: "round" | "square",
+	fillRect: (x: number, y: number, w: number, h: number) => void,
+) => {
+	// Convert to brush top left positions
+	const hsw = (strokeWidth - 1) / 2;
+	x0 = Math.floor(x0 - hsw);
+	y0 = Math.floor(y0 - hsw);
+	x1 = Math.floor(x1 - hsw);
+	y1 = Math.floor(y1 - hsw);
+
+	const idx = shape === "round" ? strokeWidth : -strokeWidth;
+	if (!_cached_brush_pixels.has(idx)) {
+		if (_cached_brush_pixels.size > 16) {
+			_cached_brush_pixels.delete(_cached_brush_pixels.keys().next().value);
+		}
+		_cached_brush_pixels.set(
+			idx,
+			idx > 0
+				? ellipsePixels(strokeWidth, strokeWidth)
+				: Array(Math.round(strokeWidth)).fill(strokeWidth),
+		);
+	}
+	const xs = _cached_brush_pixels.get(idx)!;
+
+	let w = Math.abs(x1 - x0),
+		h = Math.abs(y1 - y0),
+		f = fillRect;
+
+	// Swap to w > h
+	if (h > w) {
+		// Swap
+		[x0, y0, x1, y1] = [y0, x0, y1, x1];
+		[w, h] = [h, w];
+		f = (y, x, h, w) => fillRect(x, y, w, h);
+	}
+
+	const a = h / w;
+
+	// Swap to x0 < x1
+	if (x0 > x1) {
+		[x0, x1, y0, y1] = [x1, x0, y1, y0];
+	}
+
+	if (y0 === y1) {
+		// In this case, just draw a horizontal line
+		if (shape === "square") {
+			f(x0, y0, x1 + strokeWidth - x0, strokeWidth);
+		} else {
+			for (let y = 0; y < strokeWidth; y++) {
+				const l = xs[y];
+				const x = x0 + (strokeWidth - l) / 2;
+				f(x, y0 + y, w + l, 1);
+			}
+		}
+		return;
+	}
+
+	const sgn = Math.sign(y1 - y0);
+
+	// err is the distance between (x, y) the next horizontal grid y=ceil(y), where x is the center of pixel.
+	// If err >= 1, the line passed to the next y.
+
+	let topX = 0,
+		topY = 0;
+	{
+		// Find the top position
+		let maxv = -Infinity;
+		for (let y = 0; y < strokeWidth / 2; y++) {
+			// Most right ptr
+			const x = (strokeWidth + xs[y]) / 2 - 1,
+				v = a * x - y;
+			if (v > maxv) {
+				maxv = v;
+				topX = x;
+				topY = y;
+			}
+		}
+	}
+	const botY = strokeWidth - 1 - topY;
+
+	let tx = 0,
+		bx = 0;
+	let terr = 0.5 - a,
+		berr = 0.5 - a;
+
+	const yBase = sgn > 0 ? y0 : y0 + strokeWidth - 1;
+
+	for (let py = 0; py < strokeWidth + h; py++) {
+		const dy = py - h,
+			lp = xs[py],
+			ld = xs[dy];
+
+		// Calculate the next bx
+		if (py <= botY) {
+			bx = x0 + (strokeWidth - lp) / 2;
+		} else if (dy > botY) {
+			bx = x1 + (strokeWidth - ld) / 2;
+		} else {
+			const n = 1 + Math.max(0, Math.ceil(berr / a));
+			bx += n;
+			berr += 1 - n * a;
+		}
+
+		// Calculate the next tx
+		if (py < topY) {
+			tx = x0 + (strokeWidth + lp) / 2;
+		} else if (dy >= topY) {
+			tx = x1 + (strokeWidth + ld) / 2;
+		} else {
+			if (py === topY) tx = x0 + topX;
+			const n = 1 + Math.max(0, Math.ceil(terr / a));
+			tx += n;
+			terr += 1 - n * a;
+		}
+
+		// Draw a scan line
+		f(bx, yBase + sgn * py, tx - bx, 1);
 	}
 };

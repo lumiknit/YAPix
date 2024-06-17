@@ -10,7 +10,12 @@ import {
 	rgbaForStyle,
 } from "@/common";
 
-import { Layer, PaintConfigCanvasBackground, drawLayerToCanvas } from "..";
+import {
+	Layer,
+	PaintConfigCanvasBackground,
+	createEmptyLayer,
+	drawLayerToCanvas,
+} from "..";
 
 export type WithImageInfo = {
 	/** Getter for Size */
@@ -36,9 +41,9 @@ export const installImageInfo =
 		return Object.assign(target, {
 			size,
 			setSize,
-			layers: [],
+			layers: [createEmptyLayer("Layer 1", w, h)],
 			bgColor: rgba(0, 0, 0, 0),
-			focusedLayer: -1,
+			focusedLayer: 0,
 		});
 	};
 

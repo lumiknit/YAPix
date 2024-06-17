@@ -19,7 +19,7 @@ export type WithToolSettingsSignal = {
 export const installToolSettingsSignal = <T extends object>(
 	target: T,
 ): T & WithToolSettingsSignal => {
-	const [drawShape, setDrawShape] = createSignal<DrawShape>("free");
+	const [drawShape, setDrawShape] = createSignal<DrawShape>("line");
 	const [toolType, setToolType] = createSignal<ToolType>("brush");
 	return Object.assign(target, {
 		drawShape,
