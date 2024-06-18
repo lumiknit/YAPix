@@ -1,14 +1,7 @@
-import { Accessor, Setter, createSignal } from "solid-js";
+import { Accessor, Setter, batch, createSignal } from "solid-js";
 import { rgbToStyle } from "solid-tiny-color";
 
-import {
-	CanvasCtx2D,
-	RGBA,
-	Size,
-	emptyCanvasContext,
-	rgba,
-	rgbaForStyle,
-} from "@/common";
+import { CanvasCtx2D, Size, emptyCanvasContext } from "@/common";
 
 import {
 	Layer,
@@ -25,28 +18,43 @@ export type WithImageInfo = {
 	setSize: Setter<Size>;
 
 	/** Layers */
-	layers: Layer[];
+	layers: Accessor<Layer[]>;
 
-	/** Background color */
-	bgColor: RGBA;
+	/** Set layers */
+	setLayers: Setter<Layer[]>;
 
 	/** Current focused layer */
-	focusedLayer: number;
+	focusedLayer: Accessor<number>;
+
+	/** Set focused layer */
+	setFocusedLayer: Setter<number>;
 };
 
 export const installImageInfo =
 	<T extends object>(w: number, h: number) =>
 	(target: T): T & WithImageInfo => {
 		const [size, setSize] = createSignal({ w, h });
+		const [layers, setLayers] = createSignal(
+			[createEmptyLayer("Layer 1", w, h)],
+			{
+				equals: false,
+			},
+		);
+		const [focusedLayer, setFocusedLayer] = createSignal(0);
 		return Object.assign(target, {
 			size,
 			setSize,
-			layers: [createEmptyLayer("Layer 1", w, h)],
-			bgColor: rgba(0, 0, 0, 0),
-			focusedLayer: 0,
+			layers,
+			setLayers,
+			focusedLayer,
+			setFocusedLayer,
 		});
 	};
 
+/**
+ * Merge all layers and return the new canvas context.
+ * This can be used to export image.
+ */
 export const mergeLayersWithNewCtx = (
 	z: WithImageInfo,
 	scale: number,
@@ -55,8 +63,8 @@ export const mergeLayersWithNewCtx = (
 
 	// Merge layers
 	const ectx = emptyCanvasContext(size.w, size.h);
-	for (let i = 0; i < z.layers.length; i++) {
-		drawLayerToCanvas(ectx, z.layers[i]);
+	for (let i = 0; i < z.layers().length; i++) {
+		drawLayerToCanvas(ectx, z.layers()[i]);
 	}
 	scale = Math.min(1, Math.floor(scale));
 	if (scale <= 1) return ectx;
@@ -82,45 +90,29 @@ export const mergeLayersWithNewCtx = (
  */
 export const renderBlurredLayer = (
 	z: WithImageInfo,
-	bgConfig: PaintConfigCanvasBackground,
 	below: CanvasCtx2D,
 	above: CanvasCtx2D,
 ) => {
 	const size = z.size();
 
 	// Render below layers
+	below.clearRect(0, 0, size.w, size.h);
 	below.globalCompositeOperation = "source-over";
 
-	// If background color is transparent, fill the canvas with checkerboard
-	if (z.bgColor[3] < 255) {
-		below.fillStyle = rgbToStyle(bgConfig.color1);
-		below.fillRect(0, 0, size.w, size.h);
-		below.fillStyle = rgbToStyle(bgConfig.color2);
-		for (let y = 0; y < size.h; y += bgConfig.size) {
-			for (
-				let x = ((y / bgConfig.size) % 2) * bgConfig.size;
-				x < size.w;
-				x += 2 * bgConfig.size
-			) {
-				below.fillRect(x, y, bgConfig.size, bgConfig.size);
-			}
-		}
-	}
-
-	// Draw background color
-	below.fillStyle = rgbaForStyle(z.bgColor);
-	below.fillRect(0, 0, size.w, size.h);
-
 	// Then, draw layers below the focused layer
-	for (let i = 0; i < z.focusedLayer; i++) {
-		drawLayerToCanvas(below, z.layers[i]);
+	const ls = z.layers();
+	const fl = z.focusedLayer();
+	for (let i = 0; i < fl; i++) {
+		console.log("Render below", i, ls[i]);
+		drawLayerToCanvas(below, ls[i]);
 	}
 
 	// Render for the top layer
 	above.clearRect(0, 0, size.w, size.h);
 	above.globalCompositeOperation = "source-over";
-	for (let i = z.focusedLayer + 1; i < z.layers.length; i++) {
-		drawLayerToCanvas(above, z.layers[i]);
+	for (let i = fl + 1; i < ls.length; i++) {
+		console.log("Render above", i);
+		drawLayerToCanvas(above, ls[i]);
 	}
 };
 
@@ -135,7 +127,27 @@ export const updateFocusedLayerDataWith = (
 	ctx: CanvasCtx2D,
 ) => {
 	const size = z.size();
-	const target = z.layers[z.focusedLayer].data;
+	const target = z.layers()[z.focusedLayer()].data;
 	target.clearRect(0, 0, size.w, size.h);
 	target.drawImage(ctx.canvas, 0, 0);
+};
+
+/**
+ * Create a new layer over the focused layer.
+ */
+export const insertNewLayer = (
+	z: WithImageInfo,
+	name: string,
+	index: number,
+): number => {
+	batch(() => {
+		const ls = z.layers();
+		if (index < 0 || index >= ls.length) {
+			index = ls.length;
+		}
+		const newLayer = createEmptyLayer(name, 1, 1);
+		ls.splice(index, 0, newLayer);
+		z.setLayers(ls);
+	});
+	return index;
 };

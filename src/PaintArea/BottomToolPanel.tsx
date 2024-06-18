@@ -24,6 +24,7 @@ import {
 	handleDrawEnd,
 	redo,
 	undo,
+	checkerBoardStyle,
 } from "../paint";
 import ToolButton from "./ToolButton";
 import { DRAW_SHAPE_ICON } from "./draw-shape";
@@ -56,16 +57,30 @@ const BottomToolPanel: Component<Props> = props => {
 				<ToolButton onClick={openModalHandler("view")}>
 					<TbArtboard />
 				</ToolButton>
+				<ToolButton onClick={openModalHandler("layers")}>
+					<TbBoxMultiple />
+				</ToolButton>
+				<ToolButton onClick={openModalHandler("settings")}>
+					<TbSettings />
+				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-util">
 				<div
 					class="p-tool-color-preview"
 					onClick={openModalHandler("palette")}
 					style={{
-						background: rgbaForStyle(props.z.palette().current),
 						"border-color": props.z.palette().hsv[2] > 0.5 ? "black" : "white",
-					}}
-				/>
+						...checkerBoardStyle(props.z),
+					}}>
+					<div
+						style={{
+							background: rgbaForStyle(props.z.palette().current),
+						}}
+					/>
+				</div>
+				<ToolButton onClick={openModalHandler("drawShape")}>
+					<Dynamic component={DRAW_SHAPE_ICON[props.z.drawShape()]} />
+				</ToolButton>
 				<ToolButton>
 					<TbSelectAll />
 				</ToolButton>
@@ -78,12 +93,6 @@ const BottomToolPanel: Component<Props> = props => {
 					onClick={() => redo(props.z)}
 					disabled={props.z.history.historySize()[1] <= 0}>
 					<TbArrowForwardUp />
-				</ToolButton>
-				<ToolButton onClick={openModalHandler("layers")}>
-					<TbBoxMultiple />
-				</ToolButton>
-				<ToolButton onClick={openModalHandler("settings")}>
-					<TbSettings />
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-draw">
@@ -99,9 +108,6 @@ const BottomToolPanel: Component<Props> = props => {
 					class={props.z.toolType() === "brush" ? "active" : ""}
 					onClick={() => handleToolChange("brush")}>
 					<TbBrush />
-				</ToolButton>
-				<ToolButton onClick={openModalHandler("drawShape")}>
-					<Dynamic component={DRAW_SHAPE_ICON[props.z.drawShape()]} />
 				</ToolButton>
 			</div>
 			<div

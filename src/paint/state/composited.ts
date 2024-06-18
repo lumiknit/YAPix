@@ -11,13 +11,20 @@ import {
 	CanvasCtx2D,
 	Pos,
 	Rect,
+	ctxToBlob,
 	posOnLine,
 	rgba,
 	rgbaForStyle,
 	rotateScale2D,
 	rotateScaleRaw2D,
 } from "@/common";
-import { ERASER_TYPE_TOOLS, ToolType } from "..";
+import {
+	ERASER_TYPE_TOOLS,
+	Layer,
+	ToolType,
+	createEmptyLayer,
+	putOptimizedLayer,
+} from "..";
 
 import {
 	Brush,
@@ -31,8 +38,17 @@ import {
 	WithUIInfo,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
+	insertNewLayer,
+	renderBlurredLayer,
 	setBrushShape,
 } from ".";
+
+export const renderBlurredLayerFromState = (z: WithUIInfo & WithImageInfo) =>
+	renderBlurredLayer(
+		z,
+		z.belowLayerRef?.getContext("2d")!,
+		z.aboveLayerRef?.getContext("2d")!,
+	);
 
 /** Update brush cursor position
  * @param dt The time difference in milliseconds.
@@ -244,4 +260,110 @@ export const clearTempLayer = (
 		);
 		ctx.globalCompositeOperation = oldComposite;
 	}
+};
+
+// --- Layers
+
+/**
+ * Change focused layer.
+ * This will flush the current drawing to focused layer,
+ * and update the focused layer index.
+ */
+
+export const changeFocusedLayer = (
+	z: WithToolSettingsSignal & WithImageInfo & WithUIInfo,
+	newIndex: number,
+	noUpdateLayer?: boolean,
+) => {
+	if (newIndex < 0 || newIndex >= z.layers().length) return;
+	batch(() => {
+		const oldIndex = z.focusedLayer();
+		const ls = z.layers();
+
+		// Get the focused ctx
+		const focusedCtx = getFocusedLayerCtx(z);
+
+		// Flush the focused ctx to layer's info
+		if (!noUpdateLayer) putOptimizedLayer(ls[oldIndex], focusedCtx);
+
+		// Change the focused layer
+		z.setFocusedLayer(newIndex);
+
+		// Draw the data of the new focused layer to the focused ctx
+		const newFocused = ls[newIndex];
+		focusedCtx.save();
+		focusedCtx.globalCompositeOperation = "copy";
+		focusedCtx.drawImage(
+			newFocused.data.canvas,
+			newFocused.off.x,
+			newFocused.off.y,
+		);
+		focusedCtx.restore();
+
+		// Clear the temp layer
+		clearTempLayer(z, {
+			x: 0,
+			y: 0,
+			w: z.size().w,
+			h: z.size().h,
+		});
+
+		// Update non-focused
+		renderBlurredLayerFromState(z);
+	});
+};
+
+/**
+ * Delete the layer at index.
+ *
+ * @returns [0] The deleted layer, [1] if the deleted layer was focused, [2] if the empty layer was created.
+ */
+export const deleteLayer = (
+	z: WithToolSettingsSignal & WithImageInfo & WithUIInfo,
+	index: number,
+): [Layer, boolean, boolean] => {
+	let deleted;
+	let focusChanged = false;
+	let empty = false;
+
+	const fl = z.focusedLayer();
+	let newFocus = fl;
+
+	if (fl === index) {
+		// Change focused layer to the other one.
+		if (fl + 1 < z.layers().length) {
+			// Next layer
+			newFocus++;
+		} else {
+			if (fl === 0) {
+				// No layer to focus. Insert a new layer.
+				insertNewLayer(z, "Layer 0", 0);
+				empty = true;
+				index++;
+				newFocus++;
+				z.setFocusedLayer(index);
+			}
+			newFocus--;
+		}
+		changeFocusedLayer(z, newFocus);
+		focusChanged = true;
+		console.log("Focus changed", newFocus, index);
+	}
+
+	// Now, delete the layer
+
+	z.setLayers(ls => {
+		[deleted] = ls.splice(index, 1);
+		return ls;
+	});
+
+	if (newFocus > fl) {
+		// In this case the focused layer is moved to the left.
+		// Just update the focused layer index.
+		z.setFocusedLayer(newFocus - 1);
+	}
+
+	renderBlurredLayerFromState(z);
+
+	return [deleted!, focusChanged, empty];
 };

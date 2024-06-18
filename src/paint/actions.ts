@@ -26,7 +26,7 @@ export type UpdateImgAction = {
 export type NewLayerAction = {
 	type: "newLayer";
 	index: number;
-	opt: any;
+	name: string;
 };
 
 /** Update the layer information */
@@ -43,14 +43,16 @@ export type DeleteLayerAction = {
 	type: "deleteLayer";
 	index: number;
 	/** Layer to revert */
-	layer: Layer;
+	layer?: Layer;
+	focusChanged?: boolean;
+	createdEmpty?: boolean;
 };
 
 /** Delete the given layer */
 export type FocusLayerAction = {
 	type: "focusLayer";
 	index: number;
-	oldIndex: number;
+	oldIndex?: number;
 };
 
 /** Merge the image data of an imaeg to other image */
@@ -67,4 +69,5 @@ export type Action =
 	| NewLayerAction
 	| UpdateLayerInfoAction
 	| DeleteLayerAction
+	| FocusLayerAction
 	| MergeLayerAction;

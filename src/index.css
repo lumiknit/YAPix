@@ -64,6 +64,5 @@ body {
 }
 
 * {
-	font-size: 1rem;
 	touch-action: manipulation;
 }

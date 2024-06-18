@@ -1,6 +1,11 @@
 import { Component, onMount, onCleanup, JSX, createMemo } from "solid-js";
 
-import { PaintState, initPaintState, stepForPaintState } from ".";
+import {
+	PaintState,
+	checkerBoardStyle,
+	initPaintState,
+	stepForPaintState,
+} from ".";
 import Cursor from "./Cursor";
 import { addGestureListeners } from "@/common/gesture-handler";
 
@@ -105,6 +110,13 @@ const Canvas: Component<Props> = props => {
 					style={canvasStyle(9, 0, 0)}
 					width={props.z.size().w}
 					height={props.z.size().h}
+				/>
+				<div
+					class="cv-pix"
+					style={{
+						...checkerBoardStyle(props.z),
+						...canvasStyle(1, 0, 0),
+					}}
 				/>
 			</div>
 		</div>

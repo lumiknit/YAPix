@@ -1,4 +1,10 @@
-import { Pos, ORIGIN, CanvasCtx2D } from "@/common";
+import {
+	Pos,
+	ORIGIN,
+	CanvasCtx2D,
+	extendBoundaryByPixel,
+	EMPTY_BOUNDARY,
+} from "@/common";
 
 import { emptyCanvasContext, putContextToContext } from "@/common";
 
@@ -58,6 +64,40 @@ export const cloneLayer = (layer: Layer): Layer => {
 		...layer,
 		data,
 	};
+};
+
+/**
+ * Optimize layer size.
+ * Find the smallest rectangle that contains all the pixels.
+ *
+ * @param layer The layer where the optimized canvas is put.
+ * @param ctx The canvas context to optimize.
+ */
+export const putOptimizedLayer = (layer: Layer, ctx: CanvasCtx2D) => {
+	const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+	let bd = { ...EMPTY_BOUNDARY };
+	for (let y = 0; y < data.height; y++) {
+		for (let x = 0; x < data.width; x++) {
+			const i = (y * data.width + x) * 4;
+			if (data.data[i + 3] > 0) {
+				extendBoundaryByPixel(bd, x, y);
+			}
+		}
+	}
+	if (bd.l >= bd.r || bd.t >= bd.b) {
+		// No pixel. Just set as a single pixel.
+		layer.off = { ...ORIGIN };
+		layer.data = emptyCanvasContext(1, 1);
+	} else {
+		// Update offset
+		layer.off = {
+			x: bd.l,
+			y: bd.t,
+		};
+		// Update image data
+		layer.data = emptyCanvasContext(bd.r - bd.l, bd.b - bd.t);
+		layer.data.drawImage(ctx.canvas, -bd.l, -bd.t);
+	}
 };
 
 /**

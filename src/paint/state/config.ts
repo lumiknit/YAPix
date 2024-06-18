@@ -1,6 +1,7 @@
 import { Accessor, Setter, createSignal } from "solid-js";
 
 import { CompiledPaintConfig, PaintConfig, compilePaintConfig } from "..";
+import { rgbToStyle, styleBgCheckerboard } from "solid-tiny-color";
 
 /** An object contains signal of config */
 export type WithConfigSignal = {
@@ -25,3 +26,15 @@ export const installConfigSignal =
 			setConfig,
 		});
 	};
+
+/**
+ * Make a style string
+ */
+export const checkerBoardStyle = (z: WithConfigSignal) => {
+	const cfg = z.config().bgCheckerboard;
+	return styleBgCheckerboard(
+		rgbToStyle(cfg.color1),
+		rgbToStyle(cfg.color2),
+		cfg.size,
+	);
+};

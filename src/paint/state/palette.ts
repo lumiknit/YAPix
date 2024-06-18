@@ -57,35 +57,15 @@ export const useColorRGBA = (z: WithPaletteSignal, rgba: RGBA) => {
  * @param z State
  * @param hsv The HSV to change
  */
-export const useColorHSV = (z: WithPaletteSignal, hsv: HSV) => {
+export const useColorHSV = (z: WithPaletteSignal, hsv: HSV, alpha?: number) => {
 	const rgb = hsvToRGB(hsv);
 	z.setPalette(p => {
-		const current = rgba(rgb[0], rgb[1], rgb[2], p.current[3]);
+		if (alpha === undefined) alpha = p.current[3];
+		const current = rgba(rgb[0], rgb[1], rgb[2], alpha);
 		return {
 			current,
 			hsv,
 			history: [...p.history.filter(c => c !== current), current],
-		};
-	});
-};
-
-/**
- * Change the current color with the given index of history.
- *
- * @param z State
- * @param index The index of history. If negative, it will be the index from the end.
- */
-export const useColorFromHistory = (z: WithPaletteSignal, index: number) => {
-	z.setPalette(p => {
-		if (index < 0) index = p.history.length + index;
-		if (index < 0 || index >= p.history.length) return p;
-		const color = p.history[index];
-		p.history.splice(index, 1);
-		p.history.push(color);
-		return {
-			current: color,
-			hsv: rgbToHSV([color[0], color[1], color[2]]),
-			history: p.history,
 		};
 	});
 };

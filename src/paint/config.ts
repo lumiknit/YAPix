@@ -91,7 +91,7 @@ export const compilePaintConfig = (
 		bgCheckerboard: config.bgCheckerboard || {
 			color1: [102, 102, 102],
 			color2: [153, 153, 153],
-			size: 8,
+			size: 32,
 		},
 	};
 };

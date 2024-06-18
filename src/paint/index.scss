@@ -4,7 +4,7 @@
 	inset: 0;
 
 	touch-action: none;
-	/*cursor: none;*/
+	cursor: none;
 
 	user-select: none;
 	-webkit-user-drag: none;
@@ -29,8 +29,8 @@
 
 .cv-real-cursor {
 	position: absolute;
-	width: 1px;
-	height: 1px;
+	width: 3px;
+	height: 3px;
 	background: none;
 	border: 1px solid #0f0;
 	outline: 1px solid black;

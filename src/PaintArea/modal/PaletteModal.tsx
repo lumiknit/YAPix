@@ -1,5 +1,6 @@
 import { Component, Index, createMemo, createSignal } from "solid-js";
 import {
+	AlphaSlider,
 	HSV,
 	HSVSliderH,
 	HSVSliderS,
@@ -14,7 +15,7 @@ import {
 } from "solid-tiny-color";
 
 import { RGBA, rgbaForStyle } from "@/common";
-import { PaintState, useColorFromHistory, useColorHSV } from "@/paint";
+import { PaintState, useColorHSV, useColorRGBA } from "@/paint";
 
 import "./PaletteModal.scss";
 
@@ -34,19 +35,31 @@ const PaletteModal: Component<Props> = props => {
 
 	let updateTimeout: undefined | number;
 	let newColor = palette().hsv;
+	let newAlpha = palette().current[3] / 255.0;
+
+	const setUpdateTimeout = () => {
+		if (updateTimeout !== undefined) {
+			clearTimeout(updateTimeout);
+		}
+		updateTimeout = setTimeout(() => {
+			updateTimeout = undefined;
+			useColorHSV(props.z, newColor, newAlpha * 255);
+		}, 500);
+	};
 
 	const [c, setC] = createSignal<HSV>(newColor);
 	const onColor = (color: HSV) => {
 		setC(color);
 		newColor = color;
 		// Delayed set
-		if (updateTimeout !== undefined) {
-			clearTimeout(updateTimeout);
-		}
-		updateTimeout = setTimeout(() => {
-			useColorHSV(props.z, newColor);
-			updateTimeout = undefined;
-		}, 500);
+		setUpdateTimeout();
+	};
+
+	const [alpha, setAlpha] = createSignal(newAlpha);
+	const onAlpha = (a: number) => {
+		setAlpha(a);
+		newAlpha = a;
+		setUpdateTimeout();
 	};
 
 	const hexRGB = () => {
@@ -58,7 +71,7 @@ const PaletteModal: Component<Props> = props => {
 
 	const usePrevColor = (reversedIdx: number, color: RGBA) => {
 		setC(rgbToHSV([color[0], color[1], color[2]]));
-		useColorFromHistory(props.z, reversedIdx);
+		useColorRGBA(props.z, color);
 	};
 
 	return (
@@ -104,6 +117,16 @@ const PaletteModal: Component<Props> = props => {
 					<span>B:</span>
 					<RGBSliderB class="pa-color-slider" hsv={c()} onHSVChange={onColor} />
 					<input type="text" value={Math.floor(hsvToRGB(c())[2])} readonly />
+				</div>
+				<div class="pa-color-slider-line">
+					<span>A:</span>
+					<AlphaSlider
+						class="pa-color-slider"
+						hsv={c()}
+						alpha={alpha()}
+						onAlphaChange={onAlpha}
+					/>
+					<input type="text" value={alpha().toFixed(2)} readonly />
 				</div>
 			</div>
 			<hr />

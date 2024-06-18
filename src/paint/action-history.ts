@@ -59,7 +59,6 @@ export class HistoryManager<A> {
 			const r = this.onExec(a);
 			converted.push(r || a);
 		}
-		this.push(converted);
 		this.history.push(converted);
 		this.futures = [];
 		this.setHistorySize([this.history.length, 0]);

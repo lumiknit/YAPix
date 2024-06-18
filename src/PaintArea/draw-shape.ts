@@ -1,9 +1,8 @@
 import { IoSquare } from "solid-icons/io";
 import {
-	TbArrowsHorizontal,
 	TbBucket,
-	TbCircle,
 	TbCircleFilled,
+	TbSlash,
 	TbSquare,
 	TbWriting,
 } from "solid-icons/tb";
@@ -16,6 +15,6 @@ export const DRAW_SHAPE_ICON: { [key in DrawShape]: Component<any> } = {
 	fillRect: IoSquare,
 	//ellipse: TbCircle,
 	fillEllipse: TbCircleFilled,
-	line: TbArrowsHorizontal,
+	line: TbSlash,
 	fill: TbBucket,
 };

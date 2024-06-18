@@ -15,7 +15,11 @@ import { Action, UpdateImgAction } from "../actions";
 import { ERASER_TYPE_TOOLS, PaintConfig } from "..";
 
 import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
-import { clearTempLayer, updateBrushCursorPos } from "./composited";
+import {
+	clearTempLayer,
+	renderBlurredLayerFromState,
+	updateBrushCursorPos,
+} from "./composited";
 import { WithConfigSignal, installConfigSignal } from "./config";
 import { WithCursorSignal, installCursorSignal } from "./cursor";
 import {
@@ -37,6 +41,7 @@ import {
 	getTempLayerCtx,
 	installUIInfo,
 } from "./ui";
+import { execAction, revertAction } from "./action";
 
 export type PaintState = WithBrushSetSignal &
 	WithConfigSignal &
@@ -84,9 +89,7 @@ export const createPaintState = (
  */
 export const initPaintState = (z: PaintState) => {
 	// Update the background layer
-	const below = z.belowLayerRef!.getContext("2d")!;
-	const above = z.aboveLayerRef!.getContext("2d")!;
-	renderBlurredLayer(z, z.config().bgCheckerboard, below, above);
+	renderBlurredLayerFromState(z);
 
 	// Fit the display
 	fitCanvasToRoot(z);
@@ -150,51 +153,6 @@ export const flushTempLayer = (z: PaintState) => {
 
 // --- History
 
-/**
- * Action apply helper for history manager
- */
-const execAction = (z: PaintState, a: Action): void | Action => {
-	switch (a.type) {
-		case "updateImg":
-			const ctx = getFocusedLayerCtx(z);
-			const { rect, newImg } = a;
-			if (!newImg) {
-				toast.error("Unknown error");
-				console.error("exec failed: newImg is not set.");
-				return;
-			}
-			putContextToContext(ctx, newImg, rect.x, rect.y);
-			clearTempLayer(z, rect);
-			return a;
-		default:
-			throw new Error(`Unknown action type to execute: ${a.type}`);
-	}
-};
-
-/**
- * Action revert helper for history manager
- */
-const revertAction = (z: PaintState, a: Action) => {
-	switch (a.type) {
-		case "updateImg":
-			const ctx = getFocusedLayerCtx(z);
-			const { rect, oldImg } = a;
-			if (!oldImg) {
-				toast.error("Unknown error");
-				console.error("revert failed: oldImg is not set.");
-				return;
-			}
-			if (!a.newImg) {
-				a.newImg = extractCanvasRect(ctx, rect);
-			}
-			putContextToContext(ctx, oldImg, rect.x, rect.y);
-			clearTempLayer(z, rect);
-			return a;
-		default:
-			throw new Error(`Unknown action type to revert: ${a.type}`);
-	}
-};
-
 /** Undo the last action */
 export const undo = (z: PaintState) => {
 	if (!z.history.undo()) {
@@ -207,6 +165,10 @@ export const redo = (z: PaintState) => {
 	if (!z.history.redo()) {
 		toast.error("Nothing to redo");
 	}
+};
+
+export const executeAction = (z: PaintState, actions: Action[]) => {
+	z.history.exec(actions);
 };
 
 // --- Event Handlers
