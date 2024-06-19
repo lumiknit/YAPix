@@ -1,11 +1,10 @@
-import { Component } from "solid-js";
+import { Component, For } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { rgbaForStyle } from "@/common";
 
 import {
 	TbArrowBackUp,
-	TbArrowBigDown,
 	TbArrowForwardUp,
 	TbArtboard,
 	TbBoxMultiple,
@@ -27,7 +26,7 @@ import {
 	checkerBoardStyle,
 } from "../paint";
 import ToolButton from "./ToolButton";
-import { DRAW_SHAPE_ICON } from "./draw-shape";
+import { DRAW_SHAPE_ICON, TOOL_ICON } from "./draw-shape-tool";
 import { ModalSwitches, ModalTypes } from "./modal/Modals";
 
 type Props = {
@@ -50,6 +49,8 @@ const BottomToolPanel: Component<Props> = props => {
 	const openModalHandler = (type: ModalTypes) => () => {
 		props.sw[type](true);
 	};
+
+	const toolTypes = Object.keys(TOOL_ICON) as ToolType[];
 
 	return (
 		<div class="p-tool-panel">
@@ -96,19 +97,15 @@ const BottomToolPanel: Component<Props> = props => {
 				</ToolButton>
 			</div>
 			<div class="p-tool-row p-tr-draw">
-				<ToolButton>
-					<TbColorPicker />
-				</ToolButton>
-				<ToolButton
-					class={props.z.toolType() === "eraser" ? "active" : ""}
-					onClick={() => handleToolChange("eraser")}>
-					<TbEraser />
-				</ToolButton>
-				<ToolButton
-					class={props.z.toolType() === "brush" ? "active" : ""}
-					onClick={() => handleToolChange("brush")}>
-					<TbBrush />
-				</ToolButton>
+				<For each={toolTypes}>
+					{type => (
+						<ToolButton
+							class={props.z.toolType() === type ? "active" : ""}
+							onClick={() => handleToolChange(type)}>
+							<Dynamic component={TOOL_ICON[type]} />
+						</ToolButton>
+					)}
+				</For>
 			</div>
 			<div
 				class="p-tool-row p-tr-dot"

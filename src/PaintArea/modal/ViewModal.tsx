@@ -3,7 +3,7 @@ import { Dynamic } from "solid-js/web";
 
 import { DrawShape, PaintState, rotateScaleDisplayByCenter } from "@/paint";
 
-import { DRAW_SHAPE_ICON } from "../draw-shape";
+import { DRAW_SHAPE_ICON } from "../draw-shape-tool";
 import { rotateScale2D } from "@/common";
 
 type Props = {

@@ -15,6 +15,9 @@ export type Brush = {
 
 	/** Roundness */
 	round: boolean;
+
+	/** (Only for spoid) use only local layer */
+	spoidLocal?: boolean;
 };
 
 /** Map for tool and brush set */
@@ -39,6 +42,9 @@ export const installBrushSetSignal = <T extends object>(
 	return Object.assign(target, { brushSet, setBrushSet });
 };
 
+/**
+ * Change brush shape
+ */
 export const setBrushShape = (
 	z: WithBrushSetSignal,
 	tool: ToolType,
@@ -57,6 +63,31 @@ export const setBrushShape = (
 		},
 		round,
 	};
-	z.setBrushSet(b => b.set(tool, brush));
+	z.setBrushSet(b => {
+		const old = b.get(tool)!;
+		return b.set(tool, {
+			...old,
+			shape,
+			size: {
+				w: size,
+				h: size,
+			},
+			round,
+		});
+	});
 	return brush;
+};
+
+/**
+ * Set spoid local
+ */
+export const setSpoidLocal = (
+	z: WithBrushSetSignal,
+	tool: ToolType,
+	value: boolean,
+) => {
+	z.setBrushSet(b => {
+		const old = b.get(tool)!;
+		return b.set(tool, { ...old, spoidLocal: value });
+	});
 };

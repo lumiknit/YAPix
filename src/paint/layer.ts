@@ -16,6 +16,9 @@ export type LayerInfo = {
 	/** Layer x/y offset */
 	off: Pos;
 
+	/** Visibility */
+	visible: boolean;
+
 	/** Opacity */
 	opacity: number;
 };
@@ -46,6 +49,7 @@ export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
 	return {
 		name,
 		off: { ...ORIGIN },
+		visible: true,
 		opacity: 1,
 		data: emptyCanvasContext(w, h),
 	};
@@ -124,6 +128,31 @@ export const resizeLayer = (
 	};
 };
 
-export const drawLayerToCanvas = (ctx: CanvasCtx2D, layer: Layer) => {
-	ctx.drawImage(layer.data.canvas, layer.off.x, layer.off.y);
+/**
+ * Draw the given layer into the CanvasCtx2D.
+ *
+ * @param ctx The canvas context where the layer is drawn.
+ * @param layer The layer to draw.
+ * @param offX The x offset where the layer is drawn.
+ * @param offY The y offset where the layer is drawn.
+ * @param overrideCtx If given, instead layer.data, this context is used. Also, off will be ignored.
+ */
+export const drawLayerToCanvas = (
+	ctx: CanvasCtx2D,
+	layer: Layer,
+	offX: number,
+	offY: number,
+	overrideCtx?: CanvasCtx2D,
+) => {
+	if (!layer.visible || layer.opacity <= 0) return;
+	let x = 0,
+		y = 0;
+	if (!overrideCtx) {
+		x = layer.off.x;
+		y = layer.off.y;
+	}
+	ctx.save();
+	ctx.globalAlpha = layer.opacity;
+	ctx.drawImage((overrideCtx || layer.data).canvas, x + offX, y + offY);
+	ctx.restore();
 };

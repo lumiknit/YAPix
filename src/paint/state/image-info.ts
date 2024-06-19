@@ -61,10 +61,12 @@ export const mergeLayersWithNewCtx = (
 ): CanvasCtx2D => {
 	const size = z.size();
 
+	// Flush focused layer to the layer
+
 	// Merge layers
 	const ectx = emptyCanvasContext(size.w, size.h);
 	for (let i = 0; i < z.layers().length; i++) {
-		drawLayerToCanvas(ectx, z.layers()[i]);
+		drawLayerToCanvas(ectx, z.layers()[i], 0, 0);
 	}
 	scale = Math.min(1, Math.floor(scale));
 	if (scale <= 1) return ectx;
@@ -104,7 +106,7 @@ export const renderBlurredLayer = (
 	const fl = z.focusedLayer();
 	for (let i = 0; i < fl; i++) {
 		console.log("Render below", i, ls[i]);
-		drawLayerToCanvas(below, ls[i]);
+		drawLayerToCanvas(below, ls[i], 0, 0);
 	}
 
 	// Render for the top layer
@@ -112,7 +114,7 @@ export const renderBlurredLayer = (
 	above.globalCompositeOperation = "source-over";
 	for (let i = fl + 1; i < ls.length; i++) {
 		console.log("Render above", i);
-		drawLayerToCanvas(above, ls[i]);
+		drawLayerToCanvas(above, ls[i], 0, 0);
 	}
 };
 

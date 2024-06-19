@@ -1,12 +1,19 @@
 import { IoSquare } from "solid-icons/io";
 import {
+	TbArrowsMove,
+	TbBrush,
 	TbBucket,
 	TbCircleFilled,
+	TbColorPicker,
+	TbDeselect,
+	TbEraser,
+	TbSelectAll,
 	TbSlash,
 	TbSquare,
 	TbWriting,
+	TbZoomPan,
 } from "solid-icons/tb";
-import { DrawShape } from "../paint";
+import { DrawShape, ToolType } from "../paint";
 import { Component } from "solid-js";
 
 export const DRAW_SHAPE_ICON: { [key in DrawShape]: Component<any> } = {
@@ -17,4 +24,14 @@ export const DRAW_SHAPE_ICON: { [key in DrawShape]: Component<any> } = {
 	fillEllipse: TbCircleFilled,
 	line: TbSlash,
 	fill: TbBucket,
+};
+
+export const TOOL_ICON: { [key in ToolType]: Component<any> } = {
+	brush: TbBrush,
+	eraser: TbEraser,
+	spoid: TbColorPicker,
+	move: TbArrowsMove,
+	zoom: TbZoomPan,
+	select: TbSelectAll,
+	deselect: TbDeselect,
 };

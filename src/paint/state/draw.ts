@@ -9,10 +9,10 @@ import {
 	extendBoundaryByPixel,
 	extendBoundaryByRect,
 	boundaryToRect,
+	emptyCanvasContext,
 } from "@/common";
 
 import {
-	drawLineWithCallbacks,
 	drawLineWithCallbacksV2,
 	ellipsePolygon,
 	polygonToPath2D,
@@ -25,8 +25,9 @@ import {
 	getBrush,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
+	useColorRGBA,
 } from ".";
-import { ERASER_TYPE_TOOLS } from "..";
+import { ERASER_TYPE_TOOLS, drawLayerToCanvas } from "..";
 
 const drawBrushLine = (
 	z: PaintState,
@@ -256,8 +257,11 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
 	ptrState.last = { x: -1, y: -1 };
 };
 
-/** Draw if pointer is down */
-export const drawIfPointerDown = (z: PaintState, force?: boolean) => {
+/**
+ * Draw the shape based on the current state.
+ * This function is a callback for brush / eraser tool.
+ */
+export const stepDrawShape = (z: PaintState, force?: boolean) => {
 	if (!z.ptrState) return;
 
 	const pos = z.cursor().brush;
@@ -284,4 +288,41 @@ export const drawIfPointerDown = (z: PaintState, force?: boolean) => {
 			floodFill(z, pos, 1);
 			break;
 	}
+};
+
+/**
+ * Draw callback for spoid.
+ * It'll pick the color of the current pixel.
+ */
+export const stepSpoid = (z: PaintState, force?: boolean) => {
+	const pos = z.cursor().real;
+	const lastPos = z.ptrState!.last;
+
+	const px = Math.floor(pos.x),
+		py = Math.floor(pos.y);
+	const lx = Math.floor(lastPos.x),
+		ly = Math.floor(lastPos.y);
+	if (!force && px === lx && py === ly) return;
+
+	const brush = getBrush(z);
+
+	let data: Uint8ClampedArray;
+
+	if (brush.spoidLocal) {
+		// Just extract the color from focused layer
+		const ctx = getFocusedLayerCtx(z);
+		data = ctx.getImageData(px, py, 1, 1).data;
+	} else {
+		// Merge all layers, then extract the color
+		const ectx = emptyCanvasContext(1, 1);
+		const fl = z.focusedLayer();
+		z.layers().forEach((layer, idx) => {
+			let d = idx === fl ? getFocusedLayerCtx(z) : layer.data;
+			drawLayerToCanvas(ectx, layer, -px, -py, d);
+			console.log(ectx.getImageData(0, 0, 1, 1).data);
+		});
+		data = ectx.getImageData(0, 0, 1, 1).data;
+	}
+
+	useColorRGBA(z, data);
 };

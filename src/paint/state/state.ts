@@ -5,7 +5,6 @@ import {
 	boundaryToRect,
 	extractCanvasRect,
 	limitBoundaryToOriginRect,
-	putContextToContext,
 } from "@/common";
 import toast from "solid-toast";
 
@@ -27,7 +26,7 @@ import {
 	fitDisplayTo,
 	installDisplaySignal,
 } from "./display";
-import { drawIfPointerDown } from "./draw";
+import { stepDrawShape, stepSpoid } from "./draw";
 import {
 	WithImageInfo,
 	installImageInfo,
@@ -51,11 +50,19 @@ export type PaintState = WithBrushSetSignal &
 	WithPaletteSignal &
 	WithToolSettingsSignal &
 	WithUIInfo & {
+		/** History manager */
 		history: HistoryManager<Action>;
 
+		/** temporary draw boundary. Only this area will be flushed to focused layer */
 		tempBd: Boundary;
 
+		/** Timestamp when the step function was called, in ms. */
 		lastStepMS: number;
+
+		/**
+		 * Callback for draw function, which is called in step function.
+		 */
+		stepDraw?: (z: PaintState, force?: boolean) => void;
 	};
 
 export const createPaintState = (
@@ -184,7 +191,17 @@ export const handleDrawStart = (z: PaintState) => {
 		last: { ...pos },
 	};
 
-	drawIfPointerDown(z, true);
+	switch (z.toolType()) {
+		case "brush":
+		case "eraser":
+			z.stepDraw = stepDrawShape;
+			break;
+		case "spoid":
+			z.stepDraw = stepSpoid;
+			break;
+	}
+
+	z.stepDraw!(z, true);
 };
 
 /**
@@ -192,9 +209,10 @@ export const handleDrawStart = (z: PaintState) => {
  */
 export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
 	if (!cancelled) {
-		drawIfPointerDown(z, true);
+		z.stepDraw?.(z, true);
 	}
 
+	z.stepDraw = undefined;
 	z.ptrState = undefined;
 	flushTempLayer(z);
 };
@@ -212,5 +230,5 @@ export const stepForPaintState = (z: PaintState) => {
 	z.lastStepMS = now;
 
 	updateBrushCursorPos(z, dt);
-	drawIfPointerDown(z);
+	z.stepDraw?.(z);
 };

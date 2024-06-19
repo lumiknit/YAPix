@@ -265,11 +265,21 @@ export const clearTempLayer = (
 // --- Layers
 
 /**
+ * Update the focused layer data from the focused layer context.
+ */
+
+export const updateFocusedLayerData = (z: WithImageInfo & WithUIInfo) => {
+	const layers = z.layers();
+	const focused = z.focusedLayer();
+	const focusedCtx = getFocusedLayerCtx(z);
+	putOptimizedLayer(layers[focused], focusedCtx);
+};
+
+/**
  * Change focused layer.
  * This will flush the current drawing to focused layer,
  * and update the focused layer index.
  */
-
 export const changeFocusedLayer = (
 	z: WithToolSettingsSignal & WithImageInfo & WithUIInfo,
 	newIndex: number,
@@ -277,14 +287,13 @@ export const changeFocusedLayer = (
 ) => {
 	if (newIndex < 0 || newIndex >= z.layers().length) return;
 	batch(() => {
-		const oldIndex = z.focusedLayer();
 		const ls = z.layers();
 
 		// Get the focused ctx
 		const focusedCtx = getFocusedLayerCtx(z);
 
 		// Flush the focused ctx to layer's info
-		if (!noUpdateLayer) putOptimizedLayer(ls[oldIndex], focusedCtx);
+		if (!noUpdateLayer) updateFocusedLayerData(z);
 
 		// Change the focused layer
 		z.setFocusedLayer(newIndex);

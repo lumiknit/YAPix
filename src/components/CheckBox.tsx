@@ -5,7 +5,7 @@ import { TbSquare, TbSquareCheckFilled } from "solid-icons/tb";
 import "./CheckBox.scss";
 
 type Props = JSX.IntrinsicElements["div"] & {
-	checked: boolean;
+	checked?: boolean;
 	onChange?: (checked: boolean) => void;
 	class?: string;
 };

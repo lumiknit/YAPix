@@ -52,6 +52,8 @@
 		--c-prim-contrast: #fff;
 
 		--c-modal-bg: #444;
+		--c-modal-item-bg: #666;
+		--c-modal-item-bg-hover: #888;
 		--c-modal-input-bg: #666;
 
 		--c-tool-btn-hover: #777;
