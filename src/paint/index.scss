@@ -12,6 +12,10 @@
 	-moz-user-select: none;
 }
 
+.cv-view {
+	outline: 1px solid var(--c-fg);
+}
+
 .cv-root > *,
 .cv-view > * {
 	position: absolute;
@@ -29,11 +33,11 @@
 
 .cv-real-cursor {
 	position: absolute;
-	width: 3px;
-	height: 3px;
+	width: 5px;
+	height: 5px;
 	background: none;
 	border: 1px solid #0f0;
-	outline: 1px solid black;
+	outline: 1px solid #fff;
 	border-radius: 50%;
 	mix-blend-mode: difference;
 }

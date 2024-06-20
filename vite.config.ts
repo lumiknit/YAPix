@@ -14,16 +14,17 @@ export default defineConfig({
 		alias: [{ find: "@", replacement: "/src" }],
 	},
 	build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
+		target: ["esnext", "firefox110", "chrome110", "safari15"],
+		rollupOptions: {
+			output: {
+				manualChunks: id => {
 					const names = id.split("node_modules/");
 					if (names.length > 1) {
 						const name = names.pop()!.split("/")[0];
 						return `vendor-${name}`;
 					}
-        },
-      },
-    },
-  },
+				},
+			},
+		},
+	},
 });

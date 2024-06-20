@@ -1,8 +1,13 @@
-import { Component, createMemo } from "solid-js";
+import { Component, Match, Switch, createMemo } from "solid-js";
 
-import { boundaryToRect } from "@/common";
+import { boundaryToRect, rgbaForStyle } from "@/common";
 
-import { PaintState, getBrush, getBrushCursorPos } from ".";
+import {
+	BRUSH_SHAPE_CURSOR_TOOLS,
+	PaintState,
+	getBrush,
+	getBrushCursorPos,
+} from ".";
 import { polygonToSVG } from "./polygon";
 
 type Props = {
@@ -61,25 +66,51 @@ const Cursor: Component<Props> = props => {
 					"z-index": 20,
 				}}
 			/>
-			<div
-				class="cv-cursor"
-				style={{
-					transform: brushCursorTransform(),
-					"z-index": 20,
-					"mix-blend-mode": "difference",
-				}}>
-				<svg
-					width={2 * strokeWidth() + z() * brushW()}
-					height={2 * strokeWidth() + z() * brushH()}
-					viewBox={viewBox()}
-					style={{
-						transform: brushCursorSVGTransform(),
-						stroke: "white",
-						"stroke-width": `${strokeWidth() * iz()}px`,
-					}}>
-					<polygon points={polygonToSVG(getBrush(props.z).shape)} />
-				</svg>
-			</div>
+			<Switch>
+				<Match when={BRUSH_SHAPE_CURSOR_TOOLS.has(props.z.toolType())}>
+					<div
+						class="cv-cursor"
+						style={{
+							transform: brushCursorTransform(),
+							"z-index": 20,
+							"mix-blend-mode": "difference",
+						}}>
+						<svg
+							width={2 * strokeWidth() + z() * brushW()}
+							height={2 * strokeWidth() + z() * brushH()}
+							viewBox={viewBox()}
+							style={{
+								transform: brushCursorSVGTransform(),
+								stroke: "white",
+								"stroke-width": `${strokeWidth() * iz()}px`,
+							}}>
+							<polygon points={polygonToSVG(getBrush(props.z).shape)} />
+						</svg>
+					</div>
+				</Match>
+				<Match when={props.z.drawState()?.tool === "spoid"}>
+					<svg
+						style={{
+							transform: realCursorTransform() + " translate(-50%, -50%)",
+							"z-index": 21,
+							width: "20rem",
+							height: "20rem",
+						}}
+						viewBox="-1 -1 2 2"
+						fill="none"
+						stroke-width={0.2}>
+						<circle cx="0" cy="0" r="0.5" stroke="#000" stroke-width={0.225} />
+						<path
+							d="M -0.5 0 A 0.5 0.5 0 0 0 0.5 0"
+							stroke={rgbaForStyle(props.z.drawState()!.color)}
+						/>
+						<path
+							d="M -0.5 0 A 0.5 0.5 0 0 1 0.5 0"
+							stroke={rgbaForStyle(props.z.drawState()!.initColor)}
+						/>
+					</svg>
+				</Match>
+			</Switch>
 		</>
 	);
 };

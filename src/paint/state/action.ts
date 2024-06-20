@@ -32,21 +32,17 @@ export const execAction = (z: PaintState, a: Action): void | Action => {
 			insertNewLayer(z, a.name, a.index);
 			toast.success(`New layer ${a.name} is created`);
 			break;
-		case "deleteLayer":
-			{
-				// Check if the layer is focused
-				const [l, fc, empty] = deleteLayer(z, a.index);
-				a.layer = l;
-				a.focusChanged = fc;
-				a.createdEmpty = empty;
-				toast.success(`Layer ${l.name} is deleted`);
-				return a;
-			}
-			break;
+		case "deleteLayer": {
+			// Check if the layer is focused
+			const [l, fc, empty] = deleteLayer(z, a.index);
+			a.layer = l;
+			a.focusChanged = fc;
+			a.createdEmpty = empty;
+			toast.success(`Layer ${l.name} is deleted`);
+			return a;
+		}
 		case "focusLayer":
-			if (a.oldIndex === undefined) {
-				a.oldIndex = z.focusedLayer();
-			}
+			a.oldIndex ??= z.focusedLayer();
 			changeFocusedLayer(z, a.index);
 			break;
 		default:
@@ -67,9 +63,7 @@ export const revertAction = (z: PaintState, a: Action) => {
 				console.error("revert failed: oldImg is not set.");
 				return;
 			}
-			if (!a.newImg) {
-				a.newImg = extractCanvasRect(ctx, rect);
-			}
+			a.newImg ??= extractCanvasRect(ctx, rect);
 			putContextToContext(ctx, oldImg, rect.x, rect.y);
 			clearTempLayer(z, rect);
 			return a;

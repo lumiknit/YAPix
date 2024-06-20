@@ -1,10 +1,11 @@
-import { Component, Match, Show, Switch, createSignal } from "solid-js";
+import { Component, For, Match, Show, Switch, createSignal } from "solid-js";
 
 import {
 	PaintState,
 	getBrush,
 	setBrushShape,
 	setBrushShapeForCurrentTool,
+	setBrushTextOptions,
 	setSpoidLocal,
 } from "@/paint";
 import CheckBox from "@/components/CheckBox";
@@ -15,7 +16,7 @@ type Props = {
 
 const BrushShapeSizePart: Component<Props> = props => {
 	const brush = () => getBrush(props.z);
-	const [size, setSize] = createSignal(brush().size.w);
+	const [size, setSize] = createSignal(brush().size);
 	const [round, setRound] = createSignal(brush().round);
 	const updateBrush = () => {
 		setBrushShapeForCurrentTool(props.z, size(), round());
@@ -30,7 +31,7 @@ const BrushShapeSizePart: Component<Props> = props => {
 				<span class="label"> Brush Size </span>
 				<input
 					type="number"
-					value={brush().size.w}
+					value={brush().size}
 					onInput={e => {
 						setSize(parseInt((e.target as HTMLInputElement).value));
 						updateBrush();
@@ -76,6 +77,47 @@ const SpoidPart: Component<Props> = props => {
 	);
 };
 
+const TextPart: Component<Props> = props => {
+	const brush = () => getBrush(props.z);
+	const fontSizes = [8, 10, 12];
+
+	const handleSizeChange = (e: Event) => {
+		const v = (e.target as HTMLSelectElement).value;
+		setBrushTextOptions(props.z, props.z.toolType(), undefined, parseInt(v));
+	};
+
+	const handleTextChange = (e: Event) => {
+		const v = (e.target as HTMLInputElement).value;
+		setBrushTextOptions(props.z, props.z.toolType(), v);
+	};
+
+	return (
+		<>
+			<label class="pam-item">
+				<span class="label"> Font Size </span>
+				<select onChange={handleSizeChange}>
+					<For each={fontSizes}>
+						{sz => (
+							<option value={sz} selected={brush().fontSize === sz}>
+								{sz}
+							</option>
+						)}
+					</For>
+				</select>
+			</label>
+
+			<label class="pam-item">
+				<span class="label"> Text </span>
+				<input
+					type="text"
+					value={brush().text ?? ""}
+					onChange={handleTextChange}
+				/>
+			</label>
+		</>
+	);
+};
+
 const BrushModal: Component<Props> = props => {
 	const toolType = () => props.z.toolType();
 
@@ -92,6 +134,11 @@ const BrushModal: Component<Props> = props => {
 				{/* Spoid */}
 				<Match when={toolType() === "spoid"}>
 					<SpoidPart {...props} />
+				</Match>
+
+				{/* Text */}
+				<Match when={toolType() === "text"}>
+					<TextPart {...props} />
 				</Match>
 			</Switch>
 		</>

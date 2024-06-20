@@ -36,6 +36,14 @@ export const installPaletteSignal = <T extends object>(
 	return Object.assign(target, { palette, setPalette });
 };
 
+const rgbaNotEquals = (a: RGBA) => {
+	const a32 = new Uint32Array(a.buffer);
+	return (b: RGBA) => {
+		const b32 = new Uint32Array(b.buffer);
+		return a32[0] !== b32[0];
+	};
+};
+
 /**
  * Change the current using color to the given RGBA.
  *
@@ -47,7 +55,7 @@ export const useColorRGBA = (z: WithPaletteSignal, rgba: RGBA) => {
 	z.setPalette(p => ({
 		current: rgba,
 		hsv,
-		history: [...p.history.filter(c => c !== rgba), rgba],
+		history: [...p.history.filter(rgbaNotEquals(rgba)), rgba],
 	}));
 };
 
@@ -60,12 +68,12 @@ export const useColorRGBA = (z: WithPaletteSignal, rgba: RGBA) => {
 export const useColorHSV = (z: WithPaletteSignal, hsv: HSV, alpha?: number) => {
 	const rgb = hsvToRGB(hsv);
 	z.setPalette(p => {
-		if (alpha === undefined) alpha = p.current[3];
+		alpha ??= p.current[3];
 		const current = rgba(rgb[0], rgb[1], rgb[2], alpha);
 		return {
 			current,
 			hsv,
-			history: [...p.history.filter(c => c !== current), current],
+			history: [...p.history.filter(rgbaNotEquals(current)), current],
 		};
 	});
 };

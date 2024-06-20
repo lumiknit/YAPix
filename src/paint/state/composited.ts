@@ -50,28 +50,6 @@ export const renderBlurredLayerFromState = (z: WithUIInfo & WithImageInfo) =>
 		z.aboveLayerRef?.getContext("2d")!,
 	);
 
-/** Update brush cursor position
- * @param dt The time difference in milliseconds.
- */
-export const updateBrushCursorPos = (
-	z: WithConfigSignal & WithCursorSignal & WithBrushSetSignal,
-	dt: number,
-) => {
-	if (!z.ptrState) {
-		// Teleport
-		z.setCursor(c => ({ ...c, brush: c.real }));
-	} else {
-		const cfg = z.config();
-		const r = Math.pow(cfg.brushFollowFactor, dt / 1000);
-		z.setCursor(c => {
-			return {
-				...c,
-				brush: posOnLine(c.brush, c.real, r),
-			};
-		});
-	}
-};
-
 /**
  * Get the brush cursor position, the (x, y) of brush shape's top-left corner.
  */
@@ -79,10 +57,10 @@ export const getBrushCursorPos = (
 	z: WithBrushSetSignal & WithToolSettingsSignal & WithCursorSignal,
 ): Pos => {
 	const cur = z.cursor();
-	const b = getBrush(z);
+	const hbs = getBrush(z).size / 2;
 	return {
-		x: Math.round(cur.brush.x - b.size.w / 2),
-		y: Math.round(cur.brush.y - b.size.h / 2),
+		x: Math.round(cur.brush.x - hbs),
+		y: Math.round(cur.brush.y - hbs),
 	};
 };
 
@@ -134,10 +112,9 @@ export const changeCurrentTool = (
 
 	// Clear the temp layer
 	clearTempLayer(z, {
+		...size,
 		x: 0,
 		y: 0,
-		w: size.w,
-		h: size.h,
 	});
 };
 
@@ -165,12 +142,13 @@ export const contextUseToolStyle = (
 	switch (z.toolType()) {
 		// Use current color, with source-over
 		case "brush":
+		case "text":
 			ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(z.palette().current);
 			ctx.globalCompositeOperation = "source-over";
 			break;
 		// Use fixed color, with source-over
 		case "select":
-			ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(rgba(255, 0, 0, 128));
+			ctx.strokeStyle = ctx.fillStyle = rgbaForStyle(rgba(255, 0, 0, 255));
 			ctx.globalCompositeOperation = "source-over";
 			break;
 		// Use fixed color, by erasing
@@ -311,10 +289,9 @@ export const changeFocusedLayer = (
 
 		// Clear the temp layer
 		clearTempLayer(z, {
+			...z.size(),
 			x: 0,
 			y: 0,
-			w: z.size().w,
-			h: z.size().h,
 		});
 
 		// Update non-focused

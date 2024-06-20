@@ -8,6 +8,25 @@ type Props = {
 };
 
 const SettingsModal: Component<Props> = props => {
+	const handleImportImage = (e: Event) => {
+		// Load file blob
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		console.log(file);
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			const img = new Image();
+			img.onload = () => {
+				const ctx = props.z.focusedLayerRef!.getContext("2d");
+				if (!ctx) return;
+				ctx.drawImage(img, 0, 0);
+			};
+			img.src = reader.result as string;
+		};
+		reader.readAsDataURL(file);
+	};
+
 	return (
 		<>
 			<div class="pa-modal-title">Settings / Files</div>
@@ -45,6 +64,11 @@ const SettingsModal: Component<Props> = props => {
 					});
 				}}>
 				Export
+			</div>
+
+			<div class="pam-item">
+				<span class="label">Import image </span>
+				<input type="file" accept="image/*" onInput={handleImportImage} />
 			</div>
 
 			<hr />

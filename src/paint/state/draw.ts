@@ -10,6 +10,7 @@ import {
 	extendBoundaryByRect,
 	boundaryToRect,
 	emptyCanvasContext,
+	RGBA,
 } from "@/common";
 
 import {
@@ -27,7 +28,36 @@ import {
 	getTempLayerCtx,
 	useColorRGBA,
 } from ".";
-import { ERASER_TYPE_TOOLS, drawLayerToCanvas } from "..";
+import { ERASER_TYPE_TOOLS, ToolType, drawLayerToCanvas } from "..";
+
+export type DrawState = {
+	/** Step */
+	step: (z: PaintState, force?: boolean) => void;
+
+	/** Start position */
+	start: Pos;
+
+	/** Last position */
+	last: Pos;
+
+	/** Brush Color */
+	color: RGBA;
+
+	/** Brush Color when draw started */
+	initColor: RGBA;
+
+	/** Tool Type */
+	tool: ToolType;
+};
+
+/**
+ * Clear the temporary area, and reset temp BD.
+ */
+const clearTempArea = (z: PaintState) => {
+	const bd = z.tempBd;
+	clearTempLayer(z, boundaryToRect(bd));
+	z.tempBd = { ...EMPTY_BOUNDARY };
+};
 
 const drawBrushLine = (
 	z: PaintState,
@@ -44,7 +74,7 @@ const drawBrushLine = (
 		sy,
 		ex,
 		ey,
-		brush.size.w,
+		brush.size,
 		brush.round ? "round" : "square",
 		(x, y, w, h) => {
 			ctx.fillRect(x, y, w, h);
@@ -57,17 +87,18 @@ const drawBrushLine = (
  * Draw a middle of freedraw lines.
  */
 const drawFree = (z: PaintState, x: number, y: number, force?: boolean) => {
+	const ds = z.drawState()!;
 	const ctx = getTempLayerCtx(z);
 
-	const lastX = Math.floor(z.ptrState!.last.x),
-		lastY = Math.floor(z.ptrState!.last.y);
+	const lastX = Math.floor(ds.last.x),
+		lastY = Math.floor(ds.last.y);
 
 	const dx = x - lastX - 0.5;
 	const dy = y - lastY - 0.5;
 
 	if (!force && dx * dx + dy * dy < 1.4) return;
 
-	z.ptrState!.last = { x, y };
+	ds.last = { x, y };
 
 	ctx.save();
 	contextUseToolStyle(z, ctx);
@@ -81,8 +112,10 @@ const drawRect = (
 	fill?: boolean,
 	ellipse?: boolean,
 ) => {
-	const start = z.ptrState!.start;
-	const last = z.ptrState!.last;
+	const ds = z.drawState()!;
+
+	const start = ds.start;
+	const last = ds.last;
 
 	const sx = Math.floor(start.x),
 		sy = Math.floor(start.y);
@@ -93,62 +126,45 @@ const drawRect = (
 
 	if (px === lx && py === ly) return;
 
-	const bd = z.tempBd;
-
 	// Clear the previous rectangle
 	const ctx = getTempLayerCtx(z);
-	clearTempLayer(z, boundaryToRect(bd));
+	clearTempArea(z);
 
 	// Draw the new rectangle
 	ctx.save();
 	contextUseToolStyle(z, ctx);
-	z.tempBd = {
-		l: Math.min(sx, px),
-		r: Math.max(sx, px) + 1,
-		t: Math.min(sy, py),
-		b: Math.max(sy, py) + 1,
-	};
+
+	const bd = z.tempBd;
+	extendBoundaryByPixel(bd, sx, sy);
+	extendBoundaryByPixel(bd, px, py);
 	if (fill) {
 		if (ellipse) {
 			// Clip
-			const poly = ellipsePolygon(
-				z.tempBd.l,
-				z.tempBd.t,
-				z.tempBd.r - z.tempBd.l,
-				z.tempBd.b - z.tempBd.t,
-			);
+			const poly = ellipsePolygon(bd.l, bd.t, bd.r - bd.l, bd.b - bd.t);
 			ctx.clip(polygonToPath2D(poly));
 		}
-		ctx.fillRect(
-			z.tempBd.l,
-			z.tempBd.t,
-			z.tempBd.r - z.tempBd.l,
-			z.tempBd.b - z.tempBd.t,
-		);
+		ctx.fillRect(bd.l, bd.t, bd.r - bd.l, bd.b - bd.t);
 	} else {
 		const brush = getBrush(z),
-			lw = Math.max(brush.size.w, brush.size.h);
+			lw = brush.size;
 		ctx.lineWidth = lw;
 		const off = lw / 2 - Math.floor(lw / 2);
-		ctx.strokeRect(
-			z.tempBd.l + off,
-			z.tempBd.t + off,
-			z.tempBd.r - z.tempBd.l - 1,
-			z.tempBd.b - z.tempBd.t - 1,
-		);
-		z.tempBd.l -= lw;
-		z.tempBd.r += lw;
-		z.tempBd.t -= lw;
-		z.tempBd.b += lw;
+		ctx.strokeRect(bd.l + off, bd.t + off, bd.r - bd.l - 1, bd.b - bd.t - 1);
+		bd.l -= lw;
+		bd.r += lw;
+		bd.t -= lw;
+		bd.b += lw;
 	}
 	ctx.restore();
 
-	z.ptrState!.last = { ...pos };
+	ds.last = { ...pos };
 };
 
 const drawLine = (z: PaintState, pos: Pos) => {
-	const start = z.ptrState!.start;
-	const last = z.ptrState!.last;
+	const ds = z.drawState()!;
+
+	const start = ds.start;
+	const last = ds.last;
 
 	const lx = Math.round(last.x * 2),
 		ly = Math.round(last.y * 2);
@@ -157,12 +173,8 @@ const drawLine = (z: PaintState, pos: Pos) => {
 
 	if (px === lx && py === ly) return;
 
-	const bd = z.tempBd;
-
 	// Clear the previous line
-	clearTempLayer(z, boundaryToRect(bd));
-
-	z.tempBd = { ...EMPTY_BOUNDARY };
+	clearTempArea(z);
 
 	// Draw the new line
 	const ctx = getTempLayerCtx(z);
@@ -171,13 +183,14 @@ const drawLine = (z: PaintState, pos: Pos) => {
 	drawBrushLine(z, ctx, start.x, start.y, pos.x, pos.y);
 	ctx.restore();
 
-	z.ptrState!.last = { ...pos };
+	ds.last = { ...pos };
 };
 
 export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
+	const ds = z.drawState()!;
+
 	const tool = z.toolType();
-	const ptrState = z.ptrState!;
-	if (ptrState.last.x < 0) {
+	if (ds.last.x < 0) {
 		// Already handled.
 		return;
 	}
@@ -251,10 +264,9 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
 	tempCtx.restore();
 
 	z.tempBd = bd;
-	console.log(bd);
 
 	// Set last to -1 to prevent further flood fill
-	ptrState.last = { x: -1, y: -1 };
+	ds.last = { x: -1, y: -1 };
 };
 
 /**
@@ -262,8 +274,6 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
  * This function is a callback for brush / eraser tool.
  */
 export const stepDrawShape = (z: PaintState, force?: boolean) => {
-	if (!z.ptrState) return;
-
 	const pos = z.cursor().brush;
 
 	const shape = z.drawShape();
@@ -295,8 +305,10 @@ export const stepDrawShape = (z: PaintState, force?: boolean) => {
  * It'll pick the color of the current pixel.
  */
 export const stepSpoid = (z: PaintState, force?: boolean) => {
+	const ds = z.drawState()!;
+
 	const pos = z.cursor().real;
-	const lastPos = z.ptrState!.last;
+	const lastPos = ds.last;
 
 	const px = Math.floor(pos.x),
 		py = Math.floor(pos.y);
@@ -319,10 +331,60 @@ export const stepSpoid = (z: PaintState, force?: boolean) => {
 		z.layers().forEach((layer, idx) => {
 			let d = idx === fl ? getFocusedLayerCtx(z) : layer.data;
 			drawLayerToCanvas(ectx, layer, -px, -py, d);
-			console.log(ectx.getImageData(0, 0, 1, 1).data);
 		});
 		data = ectx.getImageData(0, 0, 1, 1).data;
 	}
 
-	useColorRGBA(z, data);
+	ds.color = data;
+
+	// Set the color to the palette
+	if (force) useColorRGBA(z, data);
+};
+
+const FONT_HEIGHT_MAP = new Map<number, string>([
+	[8, "Galmuri7"],
+	[10, "Galmuri9"],
+	[11, "Galmuri10"],
+]);
+
+const findProperFontSize = (heightPx: number) => {
+	if (FONT_HEIGHT_MAP.has(heightPx)) {
+		return FONT_HEIGHT_MAP.get(heightPx)!;
+	}
+};
+
+/**
+ * Draw callback for text tool.
+ */
+export const stepText = (z: PaintState, force?: boolean) => {
+	const ds = z.drawState()!;
+
+	const pos = z.cursor().real;
+	const px = Math.floor(pos.x),
+		py = Math.floor(pos.y);
+	const lx = ds.last.x,
+		ly = ds.last.y;
+
+	if (!force && px === lx && py === ly) return;
+	clearTempArea(z);
+
+	const brush = getBrush(z);
+	const height = brush.fontSize ?? 10;
+	const font = findProperFontSize(height) || "Galmuri9";
+
+	const ctx = getTempLayerCtx(z);
+	ctx.save();
+	contextUseToolStyle(z, ctx);
+	ctx.font = `${height}px ${font}`;
+	const measure = ctx.measureText(brush.text);
+	ctx.fillText(brush.text, px, py);
+	ctx.restore();
+
+	z.tempBd = {
+		l: px,
+		t:
+			py - (measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent),
+		r: px + measure.width,
+		b: py + 1,
+	};
 };

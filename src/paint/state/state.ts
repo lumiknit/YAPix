@@ -2,23 +2,21 @@ import {
 	AppWrap,
 	Boundary,
 	EMPTY_BOUNDARY,
+	Pos,
 	boundaryToRect,
 	extractCanvasRect,
 	limitBoundaryToOriginRect,
+	posOnLine,
 } from "@/common";
 import toast from "solid-toast";
 
 import { HistoryManager } from "../action-history";
 import { Action, UpdateImgAction } from "../actions";
 
-import { ERASER_TYPE_TOOLS, PaintConfig } from "..";
+import { ERASER_TYPE_TOOLS, IMAEG_MODIFY_TOOLS, PaintConfig } from "..";
 
 import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
-import {
-	clearTempLayer,
-	renderBlurredLayerFromState,
-	updateBrushCursorPos,
-} from "./composited";
+import { clearTempLayer, renderBlurredLayerFromState } from "./composited";
 import { WithConfigSignal, installConfigSignal } from "./config";
 import { WithCursorSignal, installCursorSignal } from "./cursor";
 import {
@@ -26,7 +24,7 @@ import {
 	fitDisplayTo,
 	installDisplaySignal,
 } from "./display";
-import { stepDrawShape, stepSpoid } from "./draw";
+import { DrawState, stepDrawShape, stepSpoid, stepText } from "./draw";
 import {
 	WithImageInfo,
 	installImageInfo,
@@ -41,6 +39,7 @@ import {
 	installUIInfo,
 } from "./ui";
 import { execAction, revertAction } from "./action";
+import { Accessor, Setter, createSignal } from "solid-js";
 
 export type PaintState = WithBrushSetSignal &
 	WithConfigSignal &
@@ -60,9 +59,10 @@ export type PaintState = WithBrushSetSignal &
 		lastStepMS: number;
 
 		/**
-		 * Callback for draw function, which is called in step function.
+		 * Draw state
 		 */
-		stepDraw?: (z: PaintState, force?: boolean) => void;
+		drawState: Accessor<DrawState | undefined>;
+		setDrawState: Setter<DrawState | undefined>;
 	};
 
 export const createPaintState = (
@@ -79,6 +79,8 @@ export const createPaintState = (
 		.app(installPaletteSignal)
 		.app(installToolSettingsSignal)
 		.app(installUIInfo).value;
+
+	const [drawState, setDrawState] = createSignal<DrawState | undefined>();
 	return Object.assign(z, {
 		history: new HistoryManager<Action>(
 			z.config().maxHistory,
@@ -87,6 +89,8 @@ export const createPaintState = (
 		),
 		tempBd: { ...EMPTY_BOUNDARY },
 		lastStepMS: Date.now(),
+		drawState,
+		setDrawState,
 	});
 };
 
@@ -105,6 +109,25 @@ export const initPaintState = (z: PaintState) => {
 export const fitCanvasToRoot = (z: PaintState) => {
 	const root = z.rootRef!;
 	fitDisplayTo(z, root.offsetWidth, root.offsetHeight);
+};
+
+/** Update brush cursor position
+ * @param dt The time difference in milliseconds.
+ */
+export const updateBrushCursorPos = (z: PaintState, dt: number) => {
+	if (!z.drawState) {
+		// Teleport
+		z.setCursor(c => ({ ...c, brush: c.real }));
+	} else {
+		const cfg = z.config();
+		const r = Math.pow(cfg.brushFollowFactor, dt / 1000);
+		z.setCursor(c => {
+			return {
+				...c,
+				brush: posOnLine(c.brush, c.real, r),
+			};
+		});
+	}
 };
 
 /**
@@ -186,35 +209,54 @@ export const executeAction = (z: PaintState, actions: Action[]) => {
 export const handleDrawStart = (z: PaintState) => {
 	const pos = z.cursor().brush;
 	console.log(pos);
-	z.ptrState = {
-		start: { ...pos },
-		last: { ...pos },
-	};
 
+	let step;
 	switch (z.toolType()) {
 		case "brush":
 		case "eraser":
-			z.stepDraw = stepDrawShape;
+			step = stepDrawShape;
 			break;
 		case "spoid":
-			z.stepDraw = stepSpoid;
+			step = stepSpoid;
 			break;
+		case "text":
+			step = stepText;
+			break;
+		default:
+			step = () => {};
 	}
 
-	z.stepDraw!(z, true);
+	const ns: DrawState = {
+		step,
+		start: { ...pos },
+		last: { ...pos },
+		color: z.palette().current,
+		initColor: z.palette().current,
+		tool: z.toolType(),
+	};
+
+	z.setDrawState(ns);
+
+	step(z, true);
 };
 
 /**
  * Handle draw end event.
  */
 export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
+	const s = z.drawState();
+	if (!s) return;
+
 	if (!cancelled) {
-		z.stepDraw?.(z, true);
+		s.step(z, true);
 	}
 
-	z.stepDraw = undefined;
-	z.ptrState = undefined;
-	flushTempLayer(z);
+	z.setDrawState();
+
+	// Only flush the temp layer for brush, eraser, and text
+	if (IMAEG_MODIFY_TOOLS.has(s.tool)) {
+		flushTempLayer(z);
+	}
 };
 
 // --- Step function
@@ -230,5 +272,5 @@ export const stepForPaintState = (z: PaintState) => {
 	z.lastStepMS = now;
 
 	updateBrushCursorPos(z, dt);
-	z.stepDraw?.(z);
+	z.drawState()?.step(z);
 };

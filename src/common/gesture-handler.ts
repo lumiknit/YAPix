@@ -22,19 +22,19 @@ import {
 
 /**
  * Pointer event type.
- * - "pen": Mouse, Pen, etc.
- * - "touch": Touch, etc.
+ * - "P": Mouse, Pen, etc.
+ * - "T": Touch, etc.
  */
-export type PointerType = "pen" | "touch";
+export type PointerType = "P" | "T";
 
 /**
  * Gesture event type.
- * - done: The state that no more gesture can be handled. This is a kind of terminal state.
- * - tap: The state which is waiting for tap event.
+ * - Z: The state that no more gesture can be handled. This is a kind of terminal state.
+ * - WT: The state which is waiting for tap event.
  * - drag: The state when dragging
  * - pinch: The state when pinching
  */
-export type GestureType = "done" | "wait-tap" | "drag" | "pinch";
+export type GestureType = "Z" | "WT" | "D" | "p";
 
 /** Max distance which does not considered as touch as drag. Pixels. */
 const NON_DRAG_THRESHOLD = 4;
@@ -342,11 +342,10 @@ export const createGestureEventContext = (
 	base: GestureEventContextParams,
 ): GestureEventContext => ({
 	...base,
-	preventDefault:
-		base.preventDefault === undefined ? true : base.preventDefault,
+	preventDefault: base.preventDefault ?? true,
 	pointers: new Map(),
 	typePointers: new Map(
-		(["pen", "touch"] as PointerType[]).map(type => [
+		(["P", "T"] as PointerType[]).map(type => [
 			type,
 			new Map<PointerID, Pointer>(),
 		]),
@@ -362,7 +361,7 @@ export const createGestureEventContext = (
  * @returns The type of the pointer.
  */
 const guessTypeOfPointerEvent = (e: PointerEvent): PointerType =>
-	e.pointerType === "touch" ? "touch" : "pen";
+	e.pointerType === "T" ? "T" : "P";
 
 /**
  * Extract the pointer position from event.
@@ -400,7 +399,7 @@ export const addGestureListeners = (
 	const safeEventCall = <T extends BaseGestureEvent>(
 		name: string,
 		e: T,
-	): boolean => {
+	): boolean | void => {
 		try {
 			const handler = (ctx as any)[name];
 			if (handler) {
@@ -409,7 +408,6 @@ export const addGestureListeners = (
 		} catch (e) {
 			console.warn("Error: " + name, ctx, e);
 		}
-		return false;
 	};
 
 	/**
@@ -419,7 +417,7 @@ export const addGestureListeners = (
 		id: PointerID,
 		timeStamp: number,
 	): BaseGestureEvent => ({
-		id: id,
+		id,
 		timeStamp,
 		pointers: ctx.pointers,
 		modifiers: {},
@@ -430,12 +428,9 @@ export const addGestureListeners = (
 	 * Create raw PointerGestureEvent from PointerEvent.
 	 */
 	const createRawPointerEvent = (e: PointerEvent): PointerGestureEvent => ({
+		...e,
 		...baseGestureEventFromPointer(e.pointerId, e.timeStamp),
 		modifiers: getModifiers(e),
-		button: e.button,
-		pressure: e.pressure,
-		tiltX: e.tiltX,
-		tiltY: e.tiltY,
 		type: guessTypeOfPointerEvent(e),
 		pos: extractPointerPos(e),
 	});
@@ -453,40 +448,33 @@ export const addGestureListeners = (
 	const markGestureDone = (ptr: Pointer) => {
 		if (!ctx.gesture) return;
 		const g = ctx.gesture;
-		try {
-			switch (g.type) {
-				case "drag":
-					safeEventCall<DragGestureEvent>("onDragEnd", {
-						...baseGestureEventFromPointer(ptr.id, Date.now()),
-						translate: g.translate,
-						pressure: 0,
-						tiltX: 0,
-						tiltY: 0,
-					});
-					break;
-				case "pinch":
-					safeEventCall<PinchGestureEvent>("onPinchEnd", {
-						...baseGestureEventFromPointer(ptr.id, Date.now()),
-						scale: g.scale,
-						rotate: g.rotate,
-						translate: g.translate,
-					});
-					break;
-			}
-		} catch (e) {
-			console.warn("Error: onDragEnd/onPinchEnd", ctx, e);
+		switch (g.type) {
+			case "D":
+				safeEventCall<DragGestureEvent>("onDragEnd", {
+					...g,
+					...baseGestureEventFromPointer(ptr.id, Date.now()),
+					pressure: 0,
+					tiltX: 0,
+					tiltY: 0,
+				});
+				break;
+			case "p":
+				safeEventCall<PinchGestureEvent>("onPinchEnd", {
+					...g,
+					...baseGestureEventFromPointer(ptr.id, Date.now()),
+				});
+				break;
 		}
 		if (g.longPressTimeout !== undefined) {
 			ct(g.longPressTimeout);
 			g.longPressTimeout = undefined;
 		}
-		g.type = "done";
+		g.type = "Z";
 	};
 
 	/** Callback from long press  */
 	const longPressCallback = (id: PointerID) => () => {
-		if (!ctx.pointers.has(id) || !ctx.gesture || ctx.gesture.type != "wait-tap")
-			return;
+		if (!ctx.pointers.has(id) || ctx.gesture?.type !== "WT") return;
 		const ptr = ctx.pointers.get(id)!;
 		const e: LongPressGestureEvent = {
 			...baseGestureEventFromPointer(ptr.id, ptr.timeStamp),
@@ -508,7 +496,7 @@ export const addGestureListeners = (
 
 	const startDrag = (ptr: Pointer, e: PointerGestureEvent) => {
 		const ptrs = ctx.typePointers.get(ptr.type)!.size;
-		const g = ctx.gesture ?? setEmptyGesture("drag", e.timeStamp);
+		const g = ctx.gesture ?? setEmptyGesture("D", e.timeStamp);
 
 		// Initialize the transform
 		g.translate = { ...ORIGIN };
@@ -520,11 +508,11 @@ export const addGestureListeners = (
 		if (ptrs === 1) {
 			// Drag
 			if (!safeEventCall("onDragStart", transformEvent)) return;
-			g.type = "drag";
+			g.type = "D";
 		} else {
 			// Pinch
 			if (!safeEventCall("onPinchStart", transformEvent)) return;
-			g.type = "pinch";
+			g.type = "p";
 		}
 		g.ptrType = ptr.type;
 
@@ -595,7 +583,7 @@ export const addGestureListeners = (
 			const tPtrs = ctx.typePointers.get(ptr.type)!;
 
 			switch (g.type) {
-				case "wait-tap":
+				case "WT":
 					// Tap cannot be occurred after cancel.
 					if (cancelled) {
 						markGestureDone(ptr);
@@ -603,8 +591,7 @@ export const addGestureListeners = (
 					}
 					if (ctx.pointers.size > 1) {
 						// If there are more than one pointer, should wait for all pointers up.
-						const lastChange = g.upTS || g.downTS;
-						if (rawEvent.timeStamp - lastChange > TAP_MAX_INTERVAL) {
+						if (rawEvent.timeStamp - (g.upTS || g.downTS) > TAP_MAX_INTERVAL) {
 							// In this case, cannot be tap.
 							markGestureDone(ptr);
 						}
@@ -615,17 +602,15 @@ export const addGestureListeners = (
 						});
 					}
 					break;
-				case "pinch":
+				case "p":
 					// If pointers are more than 2, pinch does not finished yet.
 					if (tPtrs.size > 2) {
 						// Not pinch finished yet.
 						break;
 					}
 					// Otherwise, pinch is finished, but the event should be changed into drag.
-					markGestureDone(ptr);
 					shouldRestartDrag = true;
-					break;
-				case "drag":
+				case "D":
 					// In this case, event is done.
 					markGestureDone(ptr);
 					break;
@@ -685,7 +670,7 @@ export const addGestureListeners = (
 		let g = ctx.gesture;
 		if (!g) {
 			// If gesture is not exists, create a new gesture.
-			g = setEmptyGesture("wait-tap", e.timeStamp);
+			g = setEmptyGesture("WT", e.timeStamp);
 
 			// If long press callback exists, set the timeout for long press.
 			if (ctx.onLongPress) {
@@ -701,23 +686,21 @@ export const addGestureListeners = (
 			}
 		} else {
 			switch (g.type) {
-				case "wait-tap":
+				case "WT":
 					// Then, if some pointer is up, or the interval between last downed pointer is too long,
 					// It cannot be tap event.
 					if (g.upTS || e.timeStamp - g.downTS > TAP_MAX_INTERVAL) {
 						markGestureDone(ptr);
 					}
 					break;
-				case "drag":
+				case "D":
 					// Already dragging. First of all, check if the pointer type is not different
 					if (g.ptrType !== type) break;
 
 					// Since the pointer count will be increased, we need to convert event to drag.
 					markGestureDone(ptr);
 					startDrag(ptr, rawEvent);
-					ptr.moved = true;
-					break;
-				case "pinch":
+				case "p":
 					// Already pinching. Do nothing.
 					ptr.moved = true;
 					break;
@@ -755,31 +738,17 @@ export const addGestureListeners = (
 		if (!g || !ptr.moved || (g.ptrType !== ptr.type && g.ptrType)) return;
 
 		switch (g.type) {
-			case "wait-tap":
+			case "WT":
 				// Since at least one pointer is moved,
 				// the event should be handled as drag or pinch gesture.
 				startDrag(ptr, rawEvent);
 				break;
 			// If the gesture is drag or pinch, just process with move event handler.
-			case "drag":
-				if (ctx.onDragMove) {
-					const dragEvent: DragGestureEvent = createDragEvent(rawEvent);
-					try {
-						ctx.onDragMove(dragEvent);
-					} catch (e) {
-						console.warn("Error: onDragMove", ctx, e);
-					}
-				}
+			case "D":
+				safeEventCall("onDragMove", createDragEvent(rawEvent));
 				break;
-			case "pinch":
-				if (ctx.onPinchMove) {
-					const pinchEvent: PinchGestureEvent = createPinchEvent(rawEvent);
-					try {
-						ctx.onPinchMove(pinchEvent);
-					} catch (e) {
-						console.warn("Error: onPinchMove", ctx, e);
-					}
-				}
+			case "p":
+				safeEventCall("onPinchMove", createPinchEvent(rawEvent));
 				break;
 		}
 	};

@@ -61,29 +61,6 @@ export const polygonToPath2D = (p: Polygon): Path2D => {
 };
 
 /**
- * Convert a polygon into Path2D with 4-segments
- */
-export const polygonTo4SegPath2D = (
-	p: Polygon,
-	w: number,
-	h: number,
-): Path2D => {
-	const path = new Path2D();
-	const cx = (p.bd.l + p.bd.r) / 2;
-	const cy = (p.bd.t + p.bd.b) / 2;
-	const [x0, y0] = p.points[0];
-	path.moveTo(x0, y0);
-	for (let i = 1; i < p.points.length; i++) {
-		let [x, y] = p.points[i];
-		if (x > cx) x += w;
-		if (y > cy) y += h;
-		path.lineTo(x, y);
-	}
-	path.closePath();
-	return path;
-};
-
-/**
  * Convert a polygon to a svg.
  *
  * @param p The polygon
@@ -196,67 +173,6 @@ export const ellipsePolygon = (
 		p.push(x + m / 2, x + w - m / 2);
 	}
 	return xsToPolygon(p, y);
-};
-
-/**
- * Draw a pixel-perfect line with the given callback.
- * The callback is called when a single pixel rectangle is drawn.
- * The algorithm is based on Bresenham's line algorithm.
- *
- * @param x0 The x-coordinate of the start point. Should be int
- * @param y0 The y-coordinate of the start point. Should be int
- * @param x1 The x-coordinate of the end point. Should be int
- * @param y1 The y-coordinate of the end point. Should be int
- * @param horizontal The callback to draw a horizontal line
- * @param vertical The callback to draw a vertical line
- */
-export const drawLineWithCallbacks = (
-	x0: number,
-	y0: number,
-	x1: number,
-	y1: number,
-	horizontal: (x: number, y: number, l: number) => void,
-	vertical: (y: number, x: number, l: number) => void,
-) => {
-	let f = horizontal;
-	if (Math.abs(y1 - y0) > Math.abs(x1 - x0)) {
-		// Swap
-		[x0, y0, x1, y1] = [y0, x0, y1, x1];
-		f = vertical;
-	}
-
-	const w = Math.abs(x1 - x0);
-	const h = Math.abs(y1 - y0);
-
-	if (x0 > x1) {
-		// Swap the points
-		[x0, x1] = [x1, x0];
-		[y0, y1] = [y1, y0];
-	}
-
-	let x = x0,
-		y = y0;
-
-	const sy = y1 > y0 ? 1 : -1;
-
-	let err = 2 * h - w;
-	const de = 2 * h;
-	const dne = 2 * (h - w);
-
-	let last = x;
-	for (; x <= x1; x++) {
-		if (err < 0) {
-			err += de;
-		} else {
-			f(last, y, x - last + 1);
-			last = x + 1;
-			err += dne;
-			y += sy;
-		}
-	}
-	if (err < de && x > last) {
-		f(last, y, x - last);
-	}
 };
 
 const _cached_brush_pixels: Map<number, number[]> = new Map();

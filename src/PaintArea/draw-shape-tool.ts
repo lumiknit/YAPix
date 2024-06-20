@@ -10,6 +10,7 @@ import {
 	TbSelectAll,
 	TbSlash,
 	TbSquare,
+	TbTextSize,
 	TbWriting,
 	TbZoomPan,
 } from "solid-icons/tb";
@@ -34,4 +35,5 @@ export const TOOL_ICON: { [key in ToolType]: Component<any> } = {
 	zoom: TbZoomPan,
 	select: TbSelectAll,
 	deselect: TbDeselect,
+	text: TbTextSize,
 };

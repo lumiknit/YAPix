@@ -11,13 +11,23 @@ export type Brush = {
 	shape: Polygon;
 
 	/** Size */
-	size: Size;
+	size: number;
 
 	/** Roundness */
 	round: boolean;
 
+	// --- Spoid
+
 	/** (Only for spoid) use only local layer */
 	spoidLocal?: boolean;
+
+	// --- Text
+
+	/** (Only for text) font height */
+	fontSize: number;
+
+	/** (Only for text) */
+	text: string;
 };
 
 /** Map for tool and brush set */
@@ -55,27 +65,13 @@ export const setBrushShape = (
 	const shape = round
 		? ellipsePolygon(-off, -off, size, size)
 		: rectanglePolygon(-off, -off, size, size);
-	const brush = {
-		shape,
-		size: {
-			w: size,
-			h: size,
-		},
-		round,
-	};
+	let newBrush;
 	z.setBrushSet(b => {
 		const old = b.get(tool)!;
-		return b.set(tool, {
-			...old,
-			shape,
-			size: {
-				w: size,
-				h: size,
-			},
-			round,
-		});
+		newBrush = { ...old, shape, size, round };
+		return b.set(tool, newBrush);
 	});
-	return brush;
+	return newBrush!;
 };
 
 /**
@@ -89,5 +85,21 @@ export const setSpoidLocal = (
 	z.setBrushSet(b => {
 		const old = b.get(tool)!;
 		return b.set(tool, { ...old, spoidLocal: value });
+	});
+};
+
+export const setBrushTextOptions = (
+	z: WithBrushSetSignal,
+	tool: ToolType,
+	text?: string,
+	fontSize?: number,
+) => {
+	z.setBrushSet(b => {
+		const old = b.get(tool)!;
+		return b.set(tool, {
+			...old,
+			text: text ?? old.text,
+			fontSize: fontSize ?? old.fontSize,
+		});
 	});
 };

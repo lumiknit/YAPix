@@ -11,14 +11,6 @@ export type WithCursorSignal = {
 
 	/** Setter for Cursor */
 	setCursor: Setter<Cursor>;
-
-	ptrState?: {
-		/** Start position */
-		start: Pos;
-
-		/** Last position */
-		last: Pos;
-	};
 };
 
 /** Install WithCursorSignal to the object. */

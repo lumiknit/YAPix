@@ -24,7 +24,7 @@ export const createPaintGestureContext = (
 		captureRef: z.rootRef!,
 		onPointerDown(e) {},
 		onPointerMove(e) {
-			if (e.type !== "touch") {
+			if (e.type !== "T") {
 				const p = invertDisplayTransform(z, e.pos);
 				updateRealCursorPos(z, p);
 			}
@@ -35,9 +35,7 @@ export const createPaintGestureContext = (
 		onDragStart(e) {
 			const ptr = e.pointers.get(e.id)!;
 			const action =
-				z.config()[
-					ptr.type === "touch" ? "canvasTouchAction" : "canvasPenAction"
-				];
+				z.config()[ptr.type === "T" ? "canvasTouchAction" : "canvasPenAction"];
 			if (action === "draw") {
 				updateAllCursorPos(z, invertDisplayTransform(z, ptr.dragStartPos));
 				handleDrawStart(z);
@@ -47,9 +45,7 @@ export const createPaintGestureContext = (
 		onDragMove(e) {
 			const ptr = e.pointers.get(e.id)!;
 			const action =
-				z.config()[
-					ptr.type === "touch" ? "canvasTouchAction" : "canvasPenAction"
-				];
+				z.config()[ptr.type === "T" ? "canvasTouchAction" : "canvasPenAction"];
 			if (action === "draw") {
 			} else {
 				moveRealCursorPos(
@@ -66,9 +62,7 @@ export const createPaintGestureContext = (
 		onDragEnd(e) {
 			const ptr = e.pointers.get(e.id)!;
 			const action =
-				z.config()[
-					ptr.type === "touch" ? "canvasTouchAction" : "canvasPenAction"
-				];
+				z.config()[ptr.type === "T" ? "canvasTouchAction" : "canvasPenAction"];
 			if (action === "draw") {
 				handleDrawEnd(z);
 			} else {
