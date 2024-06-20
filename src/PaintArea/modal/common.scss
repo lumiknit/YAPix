@@ -1,0 +1,50 @@
+// pam- is the prefix for PaintArea modals.
+
+.pa-modal-content {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: stretch;
+
+	& hr {
+		outline: none;
+		border: none;
+		margin: 0.5em 0;
+	}
+
+	& input[type="text"],
+	& input[type="number"] {
+		background: var(--c-modal-input-bg);
+		border: none;
+	}
+
+	& input[type="number"] {
+		text-align: right;
+	}
+}
+
+.pam-item {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+
+	border-radius: 0.5em;
+	padding: 0.5em 0.75em;
+
+	background: var(--c-modal-item-bg);
+
+	// background and color
+	transition-property: color, background;
+	transition-duration: 0.1s;
+	transition-timing-function: ease-in-out;
+
+	&:hover {
+		background: var(--c-modal-item-bg-hover);
+	}
+
+	&.selected {
+		color: var(--c-prim-contrast);
+		background: var(--c-prim);
+	}
+}

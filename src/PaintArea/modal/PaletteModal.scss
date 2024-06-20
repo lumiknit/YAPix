@@ -1,0 +1,56 @@
+.pa-m-color-picker {
+	margin: auto;
+	min-width: 10rem;
+	min-height: 10rem;
+
+	display: flex;
+	flex-direction: column;
+	justify-items: center;
+	align-items: center;
+
+	& > .wheel {
+		width: 200px;
+		height: 200px;
+	}
+}
+
+.pa-color-picker {
+	& > .wheel {
+		margin: 1rem auto;
+		width: 100%;
+		max-width: 240px;
+		/* Same as width */
+		aspect-ratio: 1;
+	}
+}
+
+.pa-color-slider-line {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+
+	& .pa-color-slider {
+		overflow: hidden;
+		border-radius: 0.25em;
+		flex: 1;
+		height: 1em;
+	}
+
+	& input {
+		width: 4rem;
+		text-align: right;
+	}
+}
+
+.pa-palette {
+	display: block;
+}
+
+.pa-palette-color {
+	display: inline-block;
+	border-radius: 0.5em;
+	width: 2em;
+	height: 2em;
+}

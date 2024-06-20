@@ -1,0 +1,49 @@
+.cv-root {
+	position: absolute;
+	overflow: hidden;
+	inset: 0;
+
+	touch-action: none;
+	cursor: none;
+
+	user-select: none;
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+}
+
+.cv-view {
+	outline: 1px solid var(--c-fg);
+}
+
+.cv-root > *,
+.cv-view > * {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.cv-pix {
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+
+	display: block;
+}
+
+.cv-real-cursor {
+	position: absolute;
+	width: 5px;
+	height: 5px;
+	background: none;
+	border: 1px solid #0f0;
+	outline: 1px solid #fff;
+	border-radius: 50%;
+	mix-blend-mode: difference;
+}
+
+.cv-cursor {
+	line-height: 0;
+	stroke: 1px solid red;
+	fill: none;
+}
