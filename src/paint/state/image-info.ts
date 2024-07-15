@@ -2,11 +2,7 @@ import { Accessor, Setter, batch, createSignal } from "solid-js";
 
 import { CanvasCtx2D, Size, emptyCanvasContext } from "@/common";
 
-import {
-	Layer,
-	createEmptyLayer,
-	drawLayerToCanvas
-} from "..";
+import { Layer, createEmptyLayer, drawLayerToCanvas } from "..";
 
 export type WithImageInfo = {
 	/** Getter for Size */

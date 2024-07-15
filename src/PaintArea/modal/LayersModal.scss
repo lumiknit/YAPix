@@ -1,4 +1,13 @@
 .pam-layer-preview {
 	border: 1px solid var(--c-fg);
 	width: 4em;
+	max-height: 8em;
+}
+
+.pam-dragging {
+	pointer-events: none;
+}
+
+.transition-transform {
+	transition: transform 0.2s;
 }

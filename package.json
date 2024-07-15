@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"@lumiknit/solid-fekit": "github:lumiknit/solid-fekit#v0.1.1",
+		"@thisbeyond/solid-dnd": "^0.7.5",
 		"solid-icons": "^1.1.0",
 		"solid-js": "^1.8.17",
 		"solid-tiny-color": "^0.1.3",

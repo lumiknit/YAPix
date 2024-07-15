@@ -14,14 +14,9 @@ import {
 	rgba,
 	rgbaForStyle,
 	rotateScale2D,
-	rotateScaleRaw2D
+	rotateScaleRaw2D,
 } from "@/common";
-import {
-	ERASER_TYPE_TOOLS,
-	Layer,
-	ToolType,
-	putOptimizedLayer
-} from "..";
+import { ERASER_TYPE_TOOLS, Layer, ToolType, putOptimizedLayer } from "..";
 
 import {
 	Brush,
@@ -32,11 +27,13 @@ import {
 	WithPaletteSignal,
 	WithToolSettingsSignal,
 	WithUIInfo,
+	applyDisplayTransform,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
 	insertNewLayer,
+	invertDisplayTransform,
 	renderBlurredLayer,
-	setBrushShape
+	setBrushShape,
 } from ".";
 
 export const renderBlurredLayerFromState = (z: WithUIInfo & WithImageInfo) =>
@@ -58,6 +55,37 @@ export const getBrushCursorPos = (
 		x: Math.round(cur.brush.x - hbs),
 		y: Math.round(cur.brush.y - hbs),
 	};
+};
+
+/**
+ * Check the brush is out of screen
+ */
+export const isBrushOutOfScreen = (
+	z: WithCursorSignal & WithUIInfo & WithDisplaySignal,
+): boolean => {
+	if (!z.rootRef) return false;
+	const b = z.cursor().brush;
+	const ip = applyDisplayTransform(z, b);
+	const rect = z.rootRef.getBoundingClientRect();
+	return ip.x < 0 || ip.y < 0 || ip.x > rect.width || ip.y > rect.height;
+};
+
+export const moveCursorToCenter = (
+	z: WithCursorSignal & WithDisplaySignal & WithUIInfo,
+) => {
+	if (!z.rootRef) return false;
+	const rect = z.rootRef.getBoundingClientRect();
+	const center = {
+		x: (rect.left + rect.right) / 2,
+		y: (rect.top + rect.bottom) / 2,
+	};
+	z.setCursor(c => {
+		const ip = invertDisplayTransform(z, center);
+		return {
+			real: ip,
+			brush: ip,
+		};
+	});
 };
 
 /**

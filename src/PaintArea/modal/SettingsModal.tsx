@@ -2,6 +2,7 @@ import { Component } from "solid-js";
 
 import { PaintState, fitCanvasToRoot, mergeLayersWithNewCtx } from "@/paint";
 import { ctxToBlob } from "@/common";
+import { TbBrandGithub } from "solid-icons/tb";
 
 type Props = {
 	z: PaintState;
@@ -27,6 +28,14 @@ const SettingsModal: Component<Props> = props => {
 		reader.readAsDataURL(file);
 	};
 
+	const handleEnterFullscreen = () => {
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+		} else {
+			document.documentElement.requestFullscreen();
+		}
+	};
+
 	return (
 		<>
 			<div class="pa-modal-title">Settings / Files</div>
@@ -34,10 +43,17 @@ const SettingsModal: Component<Props> = props => {
 			<div> About </div>
 
 			<a class="pam-item" href="https://github.com/lumiknit/dubu-tl">
-				https://github.com/lumiknit/dubu-tl
+				<span>
+					<TbBrandGithub />
+					https://github.com/lumiknit/dubu-tl
+				</span>
 			</a>
 
 			<div> Other </div>
+
+			<div class="pam-item" onClick={handleEnterFullscreen}>
+				Fullscreen
+			</div>
 
 			<div
 				class="pam-item"
@@ -70,10 +86,6 @@ const SettingsModal: Component<Props> = props => {
 				<span class="label">Import image </span>
 				<input type="file" accept="image/*" onInput={handleImportImage} />
 			</div>
-
-			<hr />
-
-			<div> Hello </div>
 		</>
 	);
 };

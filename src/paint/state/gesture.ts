@@ -8,6 +8,8 @@ import {
 	handleDrawEnd,
 	handleDrawStart,
 	invertDisplayTransform,
+	isBrushOutOfScreen,
+	moveCursorToCenter,
 	moveRealCursorPos,
 	restoreDisplayTransform,
 	rotateScaleDisplayByCenter,
@@ -16,6 +18,7 @@ import {
 	updateAllCursorPos,
 	updateRealCursorPos,
 } from ".";
+import toast from "solid-toast";
 
 export const createPaintGestureContext = (
 	z: PaintState,
@@ -79,6 +82,7 @@ export const createPaintGestureContext = (
 			// Translate should be invert transformed and re-transformed
 			restoreDisplayTransform(z);
 			transformOverDisplay(z, e.scale, e.rotate, e.translate);
+			console.log(isBrushOutOfScreen(z));
 		},
 		onWheel(e) {
 			e.preventDefault();
@@ -92,6 +96,9 @@ export const createPaintGestureContext = (
 			} else {
 				// Translate
 				z.setScroll(s => subPos(s, { x: e.deltaX, y: e.deltaY }));
+			}
+			if (isBrushOutOfScreen(z)) {
+				moveCursorToCenter(z);
 			}
 		},
 	});

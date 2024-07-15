@@ -89,6 +89,14 @@ export const invertDisplayTransform = (z: WithDisplaySignal, p: Pos): Pos => {
 	);
 };
 
+export const applyDisplayTransform = (z: WithDisplaySignal, p: Pos): Pos => {
+	const angle = z.angle();
+	return addPos(
+		rotateScaleRaw2D(angle.cos, angle.sin, z.zoom(), p),
+		z.scroll(),
+	);
+};
+
 export const fitDisplayTo = (
 	z: WithImageInfo & WithDisplaySignal,
 	w: number,

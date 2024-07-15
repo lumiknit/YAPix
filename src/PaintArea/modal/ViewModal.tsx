@@ -29,7 +29,7 @@ const ViewModal: Component<Props> = props => {
 				value={Math.log2(props.z.zoom())}
 				onInput={e => {
 					let pow = +e.currentTarget.value;
-					let z = Math.pow(2, pow);
+					let z = 2 ** pow;
 					// Snap
 					if (Math.abs(z - Math.round(z)) < 0.25) {
 						z = Math.round(z);

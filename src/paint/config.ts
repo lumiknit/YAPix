@@ -86,11 +86,11 @@ export const compilePaintConfig = (
 		...config,
 		canvasPenAction: config.canvasClickAction === "move" ? "move" : "draw",
 		canvasTouchAction: config.canvasClickAction === "draw" ? "draw" : "move",
-		brushFollowFactor: Math.pow(0.01, config.brushStabilization || 0),
+		brushFollowFactor: Math.pow(0.99, config.brushStabilization || 0),
 		maxHistory: Math.max(config.maxHistory || 100, 8),
 		bgCheckerboard: config.bgCheckerboard || {
-			color1: [102, 102, 102],
-			color2: [153, 153, 153],
+			color1: [112, 112, 112],
+			color2: [156, 156, 156],
 			size: 32,
 		},
 	};

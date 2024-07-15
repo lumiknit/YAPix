@@ -5,14 +5,14 @@ import {
 	boundaryToRect,
 	extractCanvasRect,
 	limitBoundaryToOriginRect,
-	posOnLine
+	posOnLine,
 } from "@/common";
 import toast from "solid-toast";
 
 import { HistoryManager } from "../action-history";
 import { Action, UpdateImgAction } from "../actions";
 
-import { ERASER_TYPE_TOOLS, IMAEG_MODIFY_TOOLS, PaintConfig } from "..";
+import { ERASER_TYPE_TOOLS, IMAGE_MODIFY_TOOLS, PaintConfig } from "..";
 
 import { Accessor, Setter, createSignal } from "solid-js";
 import { execAction, revertAction } from "./action";
@@ -26,10 +26,7 @@ import {
 	installDisplaySignal,
 } from "./display";
 import { DrawState, stepDrawShape, stepSpoid, stepText } from "./draw";
-import {
-	WithImageInfo,
-	installImageInfo
-} from "./image-info";
+import { WithImageInfo, installImageInfo } from "./image-info";
 import { WithPaletteSignal, installPaletteSignal } from "./palette";
 import { WithToolSettingsSignal, installToolSettingsSignal } from "./tool";
 import {
@@ -118,11 +115,11 @@ export const updateBrushCursorPos = (z: PaintState, dt: number) => {
 		z.setCursor(c => ({ ...c, brush: c.real }));
 	} else {
 		const cfg = z.config();
-		const r = Math.pow(cfg.brushFollowFactor, dt / 1000);
+		const r = (1 - cfg.brushFollowFactor) ** ((10 * dt) / 1000);
 		z.setCursor(c => {
 			return {
 				...c,
-				brush: posOnLine(c.brush, c.real, r),
+				brush: posOnLine(c.real, c.brush, r),
 			};
 		});
 	}
@@ -206,7 +203,6 @@ export const executeAction = (z: PaintState, actions: Action[]) => {
  */
 export const handleDrawStart = (z: PaintState) => {
 	const pos = z.cursor().brush;
-	console.log(pos);
 
 	let step;
 	switch (z.toolType()) {
@@ -252,7 +248,7 @@ export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
 	z.setDrawState();
 
 	// Only flush the temp layer for brush, eraser, and text
-	if (IMAEG_MODIFY_TOOLS.has(s.tool)) {
+	if (IMAGE_MODIFY_TOOLS.has(s.tool)) {
 		flushTempLayer(z);
 	}
 };

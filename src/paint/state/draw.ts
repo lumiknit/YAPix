@@ -90,6 +90,8 @@ const drawFree = (z: PaintState, x: number, y: number, force?: boolean) => {
 	const ds = z.drawState()!;
 	const ctx = getTempLayerCtx(z);
 
+	const l = ds.last;
+
 	const lastX = Math.floor(ds.last.x),
 		lastY = Math.floor(ds.last.y);
 

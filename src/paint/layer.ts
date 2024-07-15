@@ -4,12 +4,16 @@ import {
 	ORIGIN,
 	Pos,
 	extendBoundaryByPixel,
+	genID,
 } from "@/common";
 
 import { emptyCanvasContext, putContextToContext } from "@/common";
 
 /** Layer information without pixel/vector data */
 export type LayerInfo = {
+	/** Layer ID */
+	id: string;
+
 	/** Name of the layer */
 	name: string;
 
@@ -47,6 +51,7 @@ export const detachLayerInfo = (withLayerInfo: LayerInfo): LayerInfo =>
  */
 export const createEmptyLayer = (name: string, w: number, h: number): Layer => {
 	return {
+		id: genID(),
 		name,
 		off: { ...ORIGIN },
 		visible: true,
@@ -66,6 +71,7 @@ export const cloneLayer = (layer: Layer): Layer => {
 	data.drawImage(layer.data.canvas, 0, 0);
 	return {
 		...layer,
+		id: genID(),
 		data,
 	};
 };

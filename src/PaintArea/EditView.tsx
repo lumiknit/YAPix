@@ -12,7 +12,7 @@ type Props = {};
 
 const EditView: Component<Props> = () => {
 	const config: PaintConfig = {
-		brushStabilization: 10,
+		brushStabilization: 5,
 	};
 	let state = createPaintState(config, 128, 128);
 	let modalSwitches = createModalSwitches();
