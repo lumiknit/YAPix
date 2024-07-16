@@ -1,10 +1,13 @@
 import { Accessor, Setter, batch, createSignal } from "solid-js";
 
-import { CanvasCtx2D, Size, emptyCanvasContext } from "@/common";
+import { CanvasCtx2D, Size, ctxToBlob, emptyCanvasContext } from "@/common";
 
 import { Layer, createEmptyLayer, drawLayerToCanvas } from "..";
+import { DubuFmt, DubuLayer } from "../dubu-fmt";
 
 export type WithImageInfo = {
+	name: string;
+
 	/** Getter for Size */
 	size: Accessor<Size>;
 
@@ -25,17 +28,18 @@ export type WithImageInfo = {
 };
 
 export const installImageInfo =
-	<T extends object>(w: number, h: number) =>
+	<T extends object>(width: number, height: number) =>
 	(target: T): T & WithImageInfo => {
-		const [size, setSize] = createSignal({ w, h });
-		const [layers, setLayers] = createSignal(
-			[createEmptyLayer("Layer 1", w, h)],
+		const [size, setSize] = createSignal<Size>({ width, height });
+		const [layers, setLayers] = createSignal<Layer[]>(
+			[createEmptyLayer("Layer 1", width, height)],
 			{
 				equals: false,
 			},
 		);
 		const [focusedLayer, setFocusedLayer] = createSignal(0);
 		return Object.assign(target, {
+			name: "",
 			size,
 			setSize,
 			layers,
@@ -44,6 +48,69 @@ export const installImageInfo =
 			setFocusedLayer,
 		});
 	};
+
+// -- Save/load
+
+/**
+ * Pack the current state to JSON format (.dubu)
+ * Notes:
+ * - Block UI until the process is done.
+ * - This will convert current 'layers' into dubu format. Before use this function, flush focused layer
+ */
+export const packToDubuFormat = async (z: WithImageInfo): Promise<DubuFmt> => {
+	// Convert each layers to PNG base64 format
+	const layers: DubuLayer[] = [];
+	for (const l of z.layers()) {
+		const blob = await ctxToBlob(l.data, "image/png");
+		const u8arr = new Uint8Array(await blob.arrayBuffer());
+		const base64 = btoa(String.fromCharCode(...u8arr));
+		layers.push({
+			...l,
+			data: base64,
+			size: {
+				width: l.data.canvas.width,
+				height: l.data.canvas.height,
+			},
+		});
+	}
+
+	return {
+		name: z.name,
+		size: z.size(),
+		layers,
+	};
+};
+
+/**
+ * Unpack the given JSON format to the current state.
+ */
+export const unpackFromDubuFormat = async (z: WithImageInfo, fmt: DubuFmt) => {
+	const decoded: HTMLImageElement[] = [];
+	for (const l of fmt.layers) {
+		const img = new Image();
+		img.src = `data:image/png;base64,${l.data}`;
+		await img.decode();
+		console.log(img);
+		decoded.push(img);
+	}
+
+	batch(() => {
+		z.name = fmt.name;
+		z.setSize(fmt.size);
+
+		const newLayers: Layer[] = [];
+		for (let i = 0; i < decoded.length; i++) {
+			const l = fmt.layers[i];
+			const newLayer = {
+				...l,
+				data: emptyCanvasContext(l.size.width, l.size.height),
+			};
+			newLayer.data.drawImage(decoded[i], 0, 0);
+			newLayers.push(newLayer);
+		}
+		z.setLayers(newLayers);
+	});
+};
 
 /**
  * Merge all layers and return the new canvas context.
@@ -58,7 +125,7 @@ export const mergeLayersWithNewCtx = (
 	// Flush focused layer to the layer
 
 	// Merge layers
-	const ectx = emptyCanvasContext(size.w, size.h);
+	const ectx = emptyCanvasContext(size.width, size.height);
 	for (let i = 0; i < z.layers().length; i++) {
 		drawLayerToCanvas(ectx, z.layers()[i], 0, 0);
 	}
@@ -66,7 +133,7 @@ export const mergeLayersWithNewCtx = (
 	if (scale <= 1) return ectx;
 
 	// Scale-up the merged image
-	const ctx = emptyCanvasContext(size.w * scale, size.h * scale);
+	const ctx = emptyCanvasContext(size.width * scale, size.height * scale);
 	ctx.scale(scale, scale);
 	ctx.imageSmoothingEnabled = false;
 	ctx.imageSmoothingQuality = "low";
@@ -92,7 +159,7 @@ export const renderBlurredLayer = (
 	const size = z.size();
 
 	// Render below layers
-	below.clearRect(0, 0, size.w, size.h);
+	below.clearRect(0, 0, size.width, size.height);
 	below.globalCompositeOperation = "source-over";
 
 	// Then, draw layers below the focused layer
@@ -104,7 +171,7 @@ export const renderBlurredLayer = (
 	}
 
 	// Render for the top layer
-	above.clearRect(0, 0, size.w, size.h);
+	above.clearRect(0, 0, size.width, size.height);
 	above.globalCompositeOperation = "source-over";
 	for (let i = fl + 1; i < ls.length; i++) {
 		console.log("Render above", i);
@@ -124,7 +191,7 @@ export const updateFocusedLayerDataWith = (
 ) => {
 	const size = z.size();
 	const target = z.layers()[z.focusedLayer()].data;
-	target.clearRect(0, 0, size.w, size.h);
+	target.clearRect(0, 0, size.width, size.height);
 	target.drawImage(ctx.canvas, 0, 0);
 };
 

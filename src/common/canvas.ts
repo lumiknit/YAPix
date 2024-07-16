@@ -32,17 +32,17 @@ export const extractCanvasRect = (
 	ctx: CanvasCtx2D,
 	rect: Rect,
 ): CanvasCtx2D => {
-	const newCtx = emptyCanvasContext(rect.w, rect.h);
+	const newCtx = emptyCanvasContext(rect.width, rect.height);
 	newCtx.drawImage(
 		ctx.canvas,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 		0,
 		0,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 	);
 	return newCtx;
 };

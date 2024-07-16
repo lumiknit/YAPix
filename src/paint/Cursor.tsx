@@ -44,17 +44,17 @@ const Cursor: Component<Props> = props => {
 	});
 	const brushW = createMemo(() => {
 		const bd = getBrush(props.z).shape.bd;
-		return bd.r - bd.l;
+		return bd.right - bd.left;
 	});
 	const brushH = createMemo(() => {
 		const bd = getBrush(props.z).shape.bd;
-		return bd.b - bd.t;
+		return bd.bottom - bd.top;
 	});
 
 	const viewBox = createMemo(() => {
 		const r = boundaryToRect(getBrush(props.z).shape.bd);
 		const sw = (strokeWidth() * iz()) / 2;
-		return `${r.x - sw} ${r.y - sw} ${r.w + 2 * sw} ${r.h + 2 * sw}`;
+		return `${r.x - sw} ${r.y - sw} ${r.width + 2 * sw} ${r.height + 2 * sw}`;
 	});
 
 	return (

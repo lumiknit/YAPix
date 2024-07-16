@@ -9,8 +9,11 @@ import { batch } from "solid-js";
 
 import {
 	CanvasCtx2D,
+	ORIGIN,
 	Pos,
 	Rect,
+	centerOfBoundary,
+	centerOfRect,
 	rgba,
 	rgbaForStyle,
 	rotateScale2D,
@@ -58,7 +61,8 @@ export const getBrushCursorPos = (
 };
 
 /**
- * Check the brush is out of screen
+ * Check the brush is out of screen.
+ * It is useful to detect cursor is out of screen, and move cursor into the screen.
  */
 export const isBrushOutOfScreen = (
 	z: WithCursorSignal & WithUIInfo & WithDisplaySignal,
@@ -70,21 +74,18 @@ export const isBrushOutOfScreen = (
 	return ip.x < 0 || ip.y < 0 || ip.x > rect.width || ip.y > rect.height;
 };
 
+/**
+ * Move the cursor to the center of root ref.
+ */
 export const moveCursorToCenter = (
 	z: WithCursorSignal & WithDisplaySignal & WithUIInfo,
 ) => {
 	if (!z.rootRef) return false;
 	const rect = z.rootRef.getBoundingClientRect();
-	const center = {
-		x: (rect.left + rect.right) / 2,
-		y: (rect.top + rect.bottom) / 2,
-	};
-	z.setCursor(c => {
-		const ip = invertDisplayTransform(z, center);
-		return {
-			real: ip,
-			brush: ip,
-		};
+	const ip = invertDisplayTransform(z, centerOfRect(rect));
+	z.setCursor({
+		real: ip,
+		brush: ip,
 	});
 };
 
@@ -97,9 +98,10 @@ export const getBrushPos = (
 ): Pos => {
 	const b = getBrush(z);
 	const cb = z.cursor().brush;
+	const center = centerOfBoundary(b.shape.bd);
 	return {
-		x: cb.x - (b.shape.bd.r + b.shape.bd.l - 1) / 2,
-		y: cb.y - (b.shape.bd.b + b.shape.bd.t - 1) / 2,
+		x: cb.x + 0.5 - center.x,
+		y: cb.y + 0.5 - center.y,
 	};
 };
 
@@ -136,9 +138,8 @@ export const changeCurrentTool = (
 
 	// Clear the temp layer
 	clearTempLayer(z, {
+		...ORIGIN,
 		...size,
-		x: 0,
-		y: 0,
 	});
 };
 
@@ -200,8 +201,8 @@ export const rotateScaleDisplayByCenter = (
 	const sz = z.size();
 	if (!center) {
 		center = {
-			x: sz.w / 2,
-			y: sz.h / 2,
+			x: sz.width / 2,
+			y: sz.height / 2,
 		};
 	}
 
@@ -219,12 +220,10 @@ export const rotateScaleDisplayByCenter = (
 	batch(() => {
 		z.setZoom(newZoom);
 		z.setAngle({ rad, cos, sin });
-		z.setScroll(s => {
-			return {
-				x: s.x + oldCenter.x - newCenter.x,
-				y: s.y + oldCenter.y - newCenter.y,
-			};
-		});
+		z.setScroll(s => ({
+			x: s.x + oldCenter.x - newCenter.x,
+			y: s.y + oldCenter.y - newCenter.y,
+		}));
 	});
 };
 
@@ -242,7 +241,7 @@ export const clearTempLayer = (
 ) => {
 	const tool = z.toolType();
 	const ctx = getTempLayerCtx(z);
-	ctx.clearRect(rect.x, rect.y, rect.w, rect.h);
+	ctx.clearRect(rect.x, rect.y, rect.width, rect.height);
 
 	if (ERASER_TYPE_TOOLS.has(tool)) {
 		// In z case, copy the contents from the focused layer
@@ -253,12 +252,12 @@ export const clearTempLayer = (
 			focusedCtx.canvas,
 			rect.x,
 			rect.y,
-			rect.w,
-			rect.h,
+			rect.width,
+			rect.height,
 			rect.x,
 			rect.y,
-			rect.w,
-			rect.h,
+			rect.width,
+			rect.height,
 		);
 		ctx.globalCompositeOperation = oldComposite;
 	}
@@ -278,6 +277,38 @@ export const updateFocusedLayerData = (z: WithImageInfo & WithUIInfo) => {
 };
 
 /**
+ * Refresh all layer contexts.
+ * This will update focused context, clear temp context, and then render blurred layers
+ * based on the data in layers.
+ */
+export const rerenderLayers = (
+	z: WithToolSettingsSignal & WithImageInfo & WithUIInfo,
+) => {
+	const ls = z.layers();
+	const focusedIndex = z.focusedLayer();
+	const focusedCtx = getFocusedLayerCtx(z);
+	// Draw the data of the new focused layer to the focused ctx
+	const newFocused = ls[focusedIndex];
+	focusedCtx.save();
+	focusedCtx.globalCompositeOperation = "copy";
+	focusedCtx.drawImage(
+		newFocused.data.canvas,
+		newFocused.off.x,
+		newFocused.off.y,
+	);
+	focusedCtx.restore();
+
+	// Clear the temp layer
+	clearTempLayer(z, {
+		...ORIGIN,
+		...z.size(),
+	});
+
+	// Update non-focused
+	renderBlurredLayerFromState(z);
+};
+
+/**
  * Change focused layer.
  * This will flush the current drawing to focused layer,
  * and update the focused layer index.
@@ -289,37 +320,13 @@ export const changeFocusedLayer = (
 ) => {
 	if (newIndex < 0 || newIndex >= z.layers().length) return;
 	batch(() => {
-		const ls = z.layers();
-
-		// Get the focused ctx
-		const focusedCtx = getFocusedLayerCtx(z);
-
 		// Flush the focused ctx to layer's info
 		if (!noUpdateLayer) updateFocusedLayerData(z);
 
 		// Change the focused layer
 		z.setFocusedLayer(newIndex);
 
-		// Draw the data of the new focused layer to the focused ctx
-		const newFocused = ls[newIndex];
-		focusedCtx.save();
-		focusedCtx.globalCompositeOperation = "copy";
-		focusedCtx.drawImage(
-			newFocused.data.canvas,
-			newFocused.off.x,
-			newFocused.off.y,
-		);
-		focusedCtx.restore();
-
-		// Clear the temp layer
-		clearTempLayer(z, {
-			...z.size(),
-			x: 0,
-			y: 0,
-		});
-
-		// Update non-focused
-		renderBlurredLayerFromState(z);
+		rerenderLayers(z);
 	});
 };
 

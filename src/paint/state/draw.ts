@@ -78,7 +78,7 @@ const drawBrushLine = (
 		brush.round ? "round" : "square",
 		(x, y, w, h) => {
 			ctx.fillRect(x, y, w, h);
-			extendBoundaryByRect(z.tempBd, { x, y, w, h });
+			extendBoundaryByRect(z.tempBd, { x, y, width: w, height: h });
 		},
 	);
 };
@@ -142,20 +142,30 @@ const drawRect = (
 	if (fill) {
 		if (ellipse) {
 			// Clip
-			const poly = ellipsePolygon(bd.l, bd.t, bd.r - bd.l, bd.b - bd.t);
+			const poly = ellipsePolygon(
+				bd.left,
+				bd.top,
+				bd.right - bd.left,
+				bd.bottom - bd.top,
+			);
 			ctx.clip(polygonToPath2D(poly));
 		}
-		ctx.fillRect(bd.l, bd.t, bd.r - bd.l, bd.b - bd.t);
+		ctx.fillRect(bd.left, bd.top, bd.right - bd.left, bd.bottom - bd.top);
 	} else {
 		const brush = getBrush(z),
 			lw = brush.size;
 		ctx.lineWidth = lw;
 		const off = lw / 2 - Math.floor(lw / 2);
-		ctx.strokeRect(bd.l + off, bd.t + off, bd.r - bd.l - 1, bd.b - bd.t - 1);
-		bd.l -= lw;
-		bd.r += lw;
-		bd.t -= lw;
-		bd.b += lw;
+		ctx.strokeRect(
+			bd.left + off,
+			bd.top + off,
+			bd.right - bd.left - 1,
+			bd.bottom - bd.top - 1,
+		);
+		bd.left -= lw;
+		bd.right += lw;
+		bd.top -= lw;
+		bd.bottom += lw;
 	}
 	ctx.restore();
 
@@ -199,9 +209,9 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
 	const stack = [Math.floor(pos.x), Math.floor(pos.y)];
 	if (
 		stack[0] < 0 ||
-		stack[0] >= z.size().w ||
+		stack[0] >= z.size().width ||
 		stack[1] < 0 ||
-		stack[1] >= z.size().h
+		stack[1] >= z.size().height
 	)
 		return;
 
@@ -209,7 +219,7 @@ export const floodFill = (z: PaintState, pos: Pos, threshold: number) => {
 	const refCtx = ERASER_TYPE_TOOLS.has(tool)
 		? getTempLayerCtx(z)
 		: getFocusedLayerCtx(z);
-	const refData = refCtx.getImageData(0, 0, z.size().w, z.size().h);
+	const refData = refCtx.getImageData(0, 0, z.size().width, z.size().height);
 	const refWidth = refData.width;
 	const refHeight = refData.height;
 
@@ -383,10 +393,10 @@ export const stepText = (z: PaintState, force?: boolean) => {
 	ctx.restore();
 
 	z.tempBd = {
-		l: px,
-		t:
+		left: px,
+		top:
 			py - (measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent),
-		r: px + measure.width,
-		b: py + 1,
+		right: px + measure.width,
+		bottom: py + 1,
 	};
 };

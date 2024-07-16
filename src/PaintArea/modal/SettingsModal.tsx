@@ -1,8 +1,17 @@
 import { Component } from "solid-js";
 
-import { PaintState, fitCanvasToRoot, mergeLayersWithNewCtx } from "@/paint";
+import {
+	PaintState,
+	fitCanvasToRoot,
+	flushTempLayer,
+	mergeLayersWithNewCtx,
+	packToDubuFormat,
+	unpackFromDubuFormat,
+	updateFocusedLayerData,
+} from "@/paint";
 import { ctxToBlob } from "@/common";
 import { TbBrandGithub } from "solid-icons/tb";
+import toast from "solid-toast";
 
 type Props = {
 	z: PaintState;
@@ -28,6 +37,33 @@ const SettingsModal: Component<Props> = props => {
 		reader.readAsDataURL(file);
 	};
 
+	const handleSaveTemp = async () => {
+		updateFocusedLayerData(props.z);
+		const dubu = await packToDubuFormat(props.z);
+		localStorage.setItem("dubu-temp", JSON.stringify(dubu));
+		toast.success("Saved temp");
+	};
+
+	const handleLoadTemp = async () => {
+		const dubuText = localStorage.getItem("dubu-temp");
+		console.log(dubuText);
+		if (!dubuText) {
+			toast.error("No temp data");
+			return;
+		}
+
+		let dubu;
+		try {
+			dubu = JSON.parse(dubuText);
+		} catch (e) {
+			toast.error("Temp data was corrupted");
+			return;
+		}
+		// Load the data
+		await unpackFromDubuFormat(props.z, dubu);
+		toast.success("Loaded temp");
+	};
+
 	const handleEnterFullscreen = () => {
 		if (document.fullscreenElement) {
 			document.exitFullscreen();
@@ -48,6 +84,16 @@ const SettingsModal: Component<Props> = props => {
 					https://github.com/lumiknit/dubu-tl
 				</span>
 			</a>
+
+			<div> File </div>
+
+			<div class="pam-item" onClick={handleSaveTemp}>
+				Save temp
+			</div>
+
+			<div class="pam-item" onClick={handleLoadTemp}>
+				Load temp
+			</div>
 
 			<div> Other </div>
 

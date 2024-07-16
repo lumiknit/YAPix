@@ -1,4 +1,5 @@
 import {
+	Boundary,
 	CanvasCtx2D,
 	EMPTY_BOUNDARY,
 	ORIGIN,
@@ -85,7 +86,7 @@ export const cloneLayer = (layer: Layer): Layer => {
  */
 export const putOptimizedLayer = (layer: Layer, ctx: CanvasCtx2D) => {
 	const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-	let bd = { ...EMPTY_BOUNDARY };
+	let bd: Boundary = { ...EMPTY_BOUNDARY };
 	for (let y = 0; y < data.height; y++) {
 		for (let x = 0; x < data.width; x++) {
 			const i = (y * data.width + x) * 4;
@@ -94,19 +95,19 @@ export const putOptimizedLayer = (layer: Layer, ctx: CanvasCtx2D) => {
 			}
 		}
 	}
-	if (bd.l >= bd.r || bd.t >= bd.b) {
+	if (bd.left >= bd.right || bd.top >= bd.bottom) {
 		// No pixel. Just set as a single pixel.
 		layer.off = { ...ORIGIN };
 		layer.data = emptyCanvasContext(1, 1);
 	} else {
 		// Update offset
 		layer.off = {
-			x: bd.l,
-			y: bd.t,
+			x: bd.left,
+			y: bd.top,
 		};
 		// Update image data
-		layer.data = emptyCanvasContext(bd.r - bd.l, bd.b - bd.t);
-		layer.data.drawImage(ctx.canvas, -bd.l, -bd.t);
+		layer.data = emptyCanvasContext(bd.right - bd.left, bd.bottom - bd.top);
+		layer.data.drawImage(ctx.canvas, -bd.left, -bd.top);
 	}
 };
 

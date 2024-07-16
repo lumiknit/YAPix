@@ -105,11 +105,11 @@ export const fitDisplayTo = (
 	const canvasSize = z.size();
 
 	// Calculate the zoom
-	const zoom = Math.min(w / canvasSize.w, h / canvasSize.h) * 0.95;
+	const zoom = Math.min(w / canvasSize.width, h / canvasSize.height) * 0.95;
 
 	// Calculate the scroll
-	const x = (w - zoom * canvasSize.w) / 2;
-	const y = (h - zoom * canvasSize.h) / 2;
+	const x = (w - zoom * canvasSize.width) / 2;
+	const y = (h - zoom * canvasSize.height) / 2;
 
 	// Set the values
 	batch(() => {

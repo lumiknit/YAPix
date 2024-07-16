@@ -11,7 +11,12 @@ import {
 	closestCenter,
 } from "@thisbeyond/solid-dnd";
 
-import { Layer, PaintState, getFocusedLayerCtx } from "@/paint";
+import {
+	Layer,
+	PaintState,
+	checkerBoardStyle,
+	getFocusedLayerCtx,
+} from "@/paint";
 
 import "./LayersModal.scss";
 import { TbCopy, TbPlus, TbTrash } from "solid-icons/tb";
@@ -60,7 +65,13 @@ const LayerItem: Component<ItemProps> = props => {
 				"transition-transform": true,
 			}}
 			onClick={() => focusLayer(props.idx)}>
-			<canvas ref={canvasRef!} class="pam-layer-preview" />
+			<canvas
+				ref={canvasRef!}
+				class="pam-layer-preview"
+				style={{
+					...checkerBoardStyle(props.z),
+				}}
+			/>
 			{props.l.name}
 		</div>
 	);

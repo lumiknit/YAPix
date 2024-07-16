@@ -130,7 +130,7 @@ export const updateBrushCursorPos = (z: PaintState, dt: number) => {
  */
 export const flushTempLayer = (z: PaintState) => {
 	// If nothing to flush, just return.
-	if (z.tempBd.l === Infinity) return;
+	if (z.tempBd.left === Infinity) return;
 
 	const tool = z.toolType();
 	const tempCtx = getTempLayerCtx(z);
@@ -138,25 +138,25 @@ export const flushTempLayer = (z: PaintState) => {
 	const size = z.size();
 
 	// Extract the boundary
-	const bd = limitBoundaryToOriginRect(z.tempBd, size.w, size.h);
+	const bd = limitBoundaryToOriginRect(z.tempBd, size.width, size.height);
 	// Bound to the canvas
 	const rect = boundaryToRect(bd);
 	const oldImg = extractCanvasRect(focusedCtx, rect);
 
 	if (ERASER_TYPE_TOOLS.has(tool)) {
-		focusedCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
+		focusedCtx.clearRect(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	focusedCtx.drawImage(
 		tempCtx.canvas,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 	);
 
 	// Create an action, to be able to revert

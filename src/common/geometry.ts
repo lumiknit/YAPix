@@ -75,28 +75,48 @@ export const rotateScale2D = (angle: number, scale: number, p: Pos): Pos =>
 
 /** 2D Size */
 export type Size = {
-	w: number;
-	h: number;
+	width: number;
+	height: number;
 };
 
 /** 2D Rect */
 export type Rect = Pos & Size;
 
+/** Return true iff the position is in the given rectangle */
+export const isPosInRect = (r: Rect, p: Pos): boolean =>
+	p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+
+/** Return the center of boundary */
+export const centerOfRect = (r: Rect): Pos => ({
+	x: r.x + r.width / 2,
+	y: r.y + r.height / 2,
+});
+
 /** Boundary */
 export type Boundary = {
-	l: number;
-	r: number;
-	t: number;
-	b: number;
+	left: number;
+	right: number;
+	top: number;
+	bottom: number;
 };
 
 /** Empty boundary. DO NOT USE IT DIRECTLY. instead, used {...EMPTY_BOUNDARY} */
-export const EMPTY_BOUNDARY = {
-	l: Infinity,
-	r: -Infinity,
-	t: Infinity,
-	b: -Infinity,
+export const EMPTY_BOUNDARY: Boundary = {
+	left: Infinity,
+	right: -Infinity,
+	top: Infinity,
+	bottom: -Infinity,
 };
+
+/** Return true iff the position is in the boundary */
+export const isPosInBoundary = (b: Boundary, p: Pos): boolean =>
+	p.x >= b.left && p.x < b.right && p.y >= b.top && p.y < b.bottom;
+
+/** Return the center of boundary */
+export const centerOfBoundary = (b: Boundary): Pos => ({
+	x: (b.left + b.right) / 2,
+	y: (b.top + b.bottom) / 2,
+});
 
 /**
  * Extend the boundary to include the rect (x - r, y - r) - (x + r, y + r).
@@ -108,10 +128,10 @@ export const extendBoundaryByRadius = (
 	y: number,
 	r: number,
 ): Boundary => {
-	b.l = Math.min(b.l, x - r);
-	b.r = Math.max(b.r, x + r);
-	b.t = Math.min(b.t, y - r);
-	b.b = Math.max(b.b, y + r);
+	b.left = Math.min(b.left, x - r);
+	b.right = Math.max(b.right, x + r);
+	b.top = Math.min(b.top, y - r);
+	b.bottom = Math.max(b.bottom, y + r);
 	return b;
 };
 
@@ -124,10 +144,10 @@ export const extendBoundaryByPixel = (
 	x: number,
 	y: number,
 ): Boundary => {
-	b.l = Math.min(b.l, x);
-	b.r = Math.max(b.r, x + 1);
-	b.t = Math.min(b.t, y);
-	b.b = Math.max(b.b, y + 1);
+	b.left = Math.min(b.left, x);
+	b.right = Math.max(b.right, x + 1);
+	b.top = Math.min(b.top, y);
+	b.bottom = Math.max(b.bottom, y + 1);
 	return b;
 };
 
@@ -136,10 +156,10 @@ export const extendBoundaryByPixel = (
  * Inplace.
  */
 export const extendBoundaryByRect = (b: Boundary, rect: Rect): Boundary => {
-	b.l = Math.min(b.l, rect.x);
-	b.r = Math.max(b.r, rect.x + rect.w);
-	b.t = Math.min(b.t, rect.y);
-	b.b = Math.max(b.b, rect.y + rect.h);
+	b.left = Math.min(b.left, rect.x);
+	b.right = Math.max(b.right, rect.x + rect.width);
+	b.top = Math.min(b.top, rect.y);
+	b.bottom = Math.max(b.bottom, rect.y + rect.height);
 	return b;
 };
 
@@ -151,22 +171,22 @@ export const limitBoundaryToOriginRect = (
 	w: number,
 	h: number,
 ): Boundary => ({
-	l: Math.max(0, b.l),
-	r: Math.min(w, b.r),
-	t: Math.max(0, b.t),
-	b: Math.min(h, b.b),
+	left: Math.max(0, b.left),
+	right: Math.min(w, b.right),
+	top: Math.max(0, b.top),
+	bottom: Math.min(h, b.bottom),
 });
 
 export const rectToBoundary = (rect: Rect): Boundary => ({
-	l: rect.x,
-	r: rect.x + rect.w,
-	t: rect.y,
-	b: rect.y + rect.h,
+	left: rect.x,
+	right: rect.x + rect.width,
+	top: rect.y,
+	bottom: rect.y + rect.height,
 });
 
 export const boundaryToRect = (boundary: Boundary): Rect => ({
-	x: boundary.l,
-	y: boundary.t,
-	w: boundary.r - boundary.l,
-	h: boundary.b - boundary.t,
+	x: boundary.left,
+	y: boundary.top,
+	width: boundary.right - boundary.left,
+	height: boundary.bottom - boundary.top,
 });
