@@ -16,25 +16,26 @@ import { ERASER_TYPE_TOOLS, IMAGE_MODIFY_TOOLS, PaintConfig } from "..";
 
 import { Accessor, Setter, createSignal } from "solid-js";
 import { execAction, revertAction } from "./action";
-import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
+import { WithBrushSetSignal, installBrushSetSignal } from "./w-brush";
 import { clearTempLayer, renderBlurredLayerFromState } from "./composited";
-import { WithConfigSignal, installConfigSignal } from "./config";
-import { WithCursorSignal, installCursorSignal } from "./cursor";
+import { WithConfigSignal, installConfigSignal } from "./w-config";
+import { WithCursorSignal, installCursorSignal } from "./w-cursor";
 import {
 	WithDisplaySignal,
 	fitDisplayTo,
 	installDisplaySignal,
-} from "./display";
+} from "./w-display";
 import { DrawState, stepDrawShape, stepSpoid, stepText } from "./draw";
-import { WithImageInfo, installImageInfo } from "./image-info";
-import { WithPaletteSignal, installPaletteSignal } from "./palette";
-import { WithToolSettingsSignal, installToolSettingsSignal } from "./tool";
+import { WithImageInfo, installImageInfo } from "./w-image-info";
+import { WithPaletteSignal, installPaletteSignal } from "./w-palette";
+import { WithToolSettingsSignal, installToolSettingsSignal } from "./w-tool";
 import {
 	WithUIInfo,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
 	installUIInfo,
-} from "./ui";
+} from "./w-ui";
+import { WithBlockSignal, installBlockSignal } from "./w-block";
 
 export type PaintState = WithBrushSetSignal &
 	WithConfigSignal &
@@ -43,6 +44,7 @@ export type PaintState = WithBrushSetSignal &
 	WithImageInfo &
 	WithPaletteSignal &
 	WithToolSettingsSignal &
+	WithBlockSignal &
 	WithUIInfo & {
 		/** History manager */
 		history: HistoryManager<Action>;
@@ -73,6 +75,7 @@ export const createPaintState = (
 		.app(installImageInfo(w, h))
 		.app(installPaletteSignal)
 		.app(installToolSettingsSignal)
+		.app(installBlockSignal)
 		.app(installUIInfo).value;
 
 	const [drawState, setDrawState] = createSignal<DrawState | undefined>();

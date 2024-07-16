@@ -3,9 +3,9 @@ import { Component } from "solid-js";
 import {
 	PaintState,
 	fitCanvasToRoot,
-	flushTempLayer,
 	mergeLayersWithNewCtx,
 	packToDubuFormat,
+	rerenderLayers,
 	unpackFromDubuFormat,
 	updateFocusedLayerData,
 } from "@/paint";
@@ -61,6 +61,7 @@ const SettingsModal: Component<Props> = props => {
 		}
 		// Load the data
 		await unpackFromDubuFormat(props.z, dubu);
+		rerenderLayers(props.z);
 		toast.success("Loaded temp");
 	};
 

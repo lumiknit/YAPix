@@ -18,7 +18,6 @@ import {
 	updateAllCursorPos,
 	updateRealCursorPos,
 } from ".";
-import toast from "solid-toast";
 
 export const createPaintGestureContext = (
 	z: PaintState,
