@@ -20,8 +20,7 @@ export type ToolType =
 	| "eraser"
 	| "select"
 	| "deselect"
-	| "move"
-	| "zoom"
+	| "transform"
 	| "spoid"
 	| "text";
 
@@ -29,12 +28,11 @@ export type ToolType =
 export const ERASER_TYPE_TOOLS: Set<ToolType> = new Set(["eraser", "deselect"]);
 
 /** This types will change the layer pixels. Thus flush is required. */
-export const IMAEG_MODIFY_TOOLS: Set<ToolType> = new Set([
+export const IMAGE_MODIFY_TOOLS: Set<ToolType> = new Set([
 	"brush",
 	"eraser",
 	"text",
-	"move",
-	"zoom",
+	"transform",
 ]);
 
 /** This types need to show brush-shape cursor */

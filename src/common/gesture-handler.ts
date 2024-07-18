@@ -17,6 +17,7 @@ import {
 	rotateScale2D,
 	subPos,
 } from "@/common";
+import toast from "solid-toast";
 
 // -- Enums and Constants
 
@@ -361,7 +362,7 @@ export const createGestureEventContext = (
  * @returns The type of the pointer.
  */
 const guessTypeOfPointerEvent = (e: PointerEvent): PointerType =>
-	e.pointerType === "T" ? "T" : "P";
+	e.pointerType === "touch" ? "T" : "P";
 
 /**
  * Extract the pointer position from event.

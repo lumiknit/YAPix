@@ -49,8 +49,10 @@
 }
 
 .pa-palette-color {
+	position: relative;
 	display: inline-block;
 	border-radius: 0.5em;
 	width: 2em;
 	height: 2em;
+	overflow: hidden;
 }

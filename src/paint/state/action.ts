@@ -10,7 +10,11 @@ import {
 	deleteLayer,
 	getFocusedLayerCtx,
 	insertNewLayer,
+	rerenderLayers,
+	updateFocusedLayerData,
 } from ".";
+import { Properties } from "solid-js/web";
+import { batch } from "solid-js";
 
 /**
  * Action apply helper for history manager
@@ -44,6 +48,32 @@ export const execAction = (z: PaintState, a: Action): void | Action => {
 		case "focusLayer":
 			a.oldIndex ??= z.focusedLayer();
 			changeFocusedLayer(z, a.index);
+			break;
+		case "changeCanvasSize":
+			updateFocusedLayerData(z);
+			batch(() => {
+				if (!a.prev) {
+					a.prev = { ...z.size() };
+				}
+				if (!a.oldLayers) {
+					a.oldLayers = [...z.layers()];
+				}
+				if (!a.newLayers) {
+					// Convert the layers to the new size
+					a.newLayers = a.oldLayers.map(l => {
+						const newCtx = extractCanvasRect(getFocusedLayerCtx(z), {
+							x: 0,
+							y: 0,
+							width: a.next.width,
+							height: a.next.height,
+						});
+						return { ...l, ctx: newCtx };
+					});
+				}
+				z.setSize(a.next);
+				z.setLayers(a.newLayers);
+			});
+			rerenderLayers(z);
 			break;
 		default:
 			throw new Error(`Unknown action type to execute: ${a.type}`);
@@ -93,6 +123,15 @@ export const revertAction = (z: PaintState, a: Action) => {
 			break;
 		case "focusLayer":
 			changeFocusedLayer(z, a.oldIndex!);
+			break;
+		case "changeCanvasSize":
+			console.log("changeCanvasSize");
+			batch(() => {
+				z.setSize(a.prev!);
+				z.setLayers(a.oldLayers!);
+			});
+			rerenderLayers(z);
+			console.log(z.size(), z.layers());
 			break;
 		default:
 			throw new Error(`Unknown action type to revert: ${a.type}`);

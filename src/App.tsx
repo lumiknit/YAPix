@@ -1,17 +1,18 @@
 import { Component } from "solid-js";
 import { Toaster } from "solid-toast";
 
-import EditView from "@/PaintArea/EditView";
-
 import "./App.scss";
+import { TopRouter, createRouterState } from "./TopRouter";
 
 const App: Component = () => {
+	const routeState = createRouterState("edit");
+
 	return (
 		<div class="app">
 			{/* Top components */}
 			<Toaster position="top-center" />
-			{/* Main paint view */}
-			<EditView />
+
+			<TopRouter z={routeState} />
 		</div>
 	);
 };

@@ -1,5 +1,10 @@
 @import "./modal.scss";
 
+.abs-0 {
+	position: absolute;
+	inset: 0;
+}
+
 .p-edit-view {
 	position: absolute;
 	inset: 0;

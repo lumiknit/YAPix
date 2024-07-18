@@ -12,6 +12,7 @@ import {
 	hsvToRGB,
 	hsvToStyle,
 	rgbToHSV,
+	styleBgCheckerboard,
 } from "solid-tiny-color";
 
 import { RGBA, rgbaForStyle } from "@/common";
@@ -163,10 +164,16 @@ const PaletteModal: Component<Props> = props => {
 						<div
 							class="pa-palette-color"
 							style={{
-								background: rgbaForStyle(c()),
+								...styleBgCheckerboard("#aaa", "#777", 16),
 							}}
-							onClick={() => usePrevColor(idx, c())}
-						/>
+							onClick={() => usePrevColor(idx, c())}>
+							<div
+								class="abs-0"
+								style={{
+									background: rgbaForStyle(c()),
+								}}
+							/>
+						</div>
 					)}
 				</Index>
 			</div>

@@ -1,4 +1,4 @@
-import { Rect } from ".";
+import { Rect, Size } from ".";
 
 /**
  * Common interfaces for (offscreen) canvas context 2D.
@@ -26,23 +26,34 @@ export const emptyCanvasContext = (
 };
 
 /**
+ * Get the size of the context.
+ *
+ * @param ctx Canvas context
+ * @returns Size of the context
+ */
+export const getContextSize = (ctx: CanvasCtx2D): Size => ({
+	width: ctx.canvas.width,
+	height: ctx.canvas.height,
+});
+
+/**
  * Extract the specified rectangle area from canvas, and return it as new canvas.
  */
 export const extractCanvasRect = (
 	ctx: CanvasCtx2D,
 	rect: Rect,
 ): CanvasCtx2D => {
-	const newCtx = emptyCanvasContext(rect.w, rect.h);
+	const newCtx = emptyCanvasContext(rect.width, rect.height);
 	newCtx.drawImage(
 		ctx.canvas,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 		0,
 		0,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 	);
 	return newCtx;
 };
@@ -87,4 +98,27 @@ export const ctxToBlob = (
 			quality,
 		});
 	}
+};
+
+/**
+ * Convert the context into PNG Base64
+ */
+export const ctxToPNGBase64 = async (ctx: CanvasCtx2D): Promise<string> => {
+	const blob = await ctxToBlob(ctx, "image/png");
+	const u8arr = new Uint8Array(await blob.arrayBuffer());
+	return btoa(String.fromCharCode(...u8arr));
+};
+
+/**
+ * Create the context from PNG Base64
+ */
+export const ctxFromPNGBase64 = async (
+	base64: string,
+): Promise<CanvasCtx2D> => {
+	const img = new Image();
+	img.src = `data:image/png;base64,${base64}`;
+	await img.decode();
+	const ctx = emptyCanvasContext(img.width, img.height);
+	ctx.drawImage(img, 0, 0);
+	return ctx;
 };

@@ -1,12 +1,15 @@
+import { rotateScaleRaw2D, subPos } from "@/common";
 import {
 	GestureEventContext,
 	createGestureEventContext,
 } from "@/common/gesture-handler";
 import {
 	PaintState,
-	handleDrawStart,
 	handleDrawEnd,
+	handleDrawStart,
 	invertDisplayTransform,
+	isBrushOutOfScreen,
+	moveCursorToCenter,
 	moveRealCursorPos,
 	restoreDisplayTransform,
 	rotateScaleDisplayByCenter,
@@ -15,7 +18,6 @@ import {
 	updateAllCursorPos,
 	updateRealCursorPos,
 } from ".";
-import { rotateScaleRaw2D, subPos } from "@/common";
 
 export const createPaintGestureContext = (
 	z: PaintState,
@@ -79,6 +81,7 @@ export const createPaintGestureContext = (
 			// Translate should be invert transformed and re-transformed
 			restoreDisplayTransform(z);
 			transformOverDisplay(z, e.scale, e.rotate, e.translate);
+			console.log(isBrushOutOfScreen(z));
 		},
 		onWheel(e) {
 			e.preventDefault();
@@ -92,6 +95,9 @@ export const createPaintGestureContext = (
 			} else {
 				// Translate
 				z.setScroll(s => subPos(s, { x: e.deltaX, y: e.deltaY }));
+			}
+			if (isBrushOutOfScreen(z)) {
+				moveCursorToCenter(z);
 			}
 		},
 	});

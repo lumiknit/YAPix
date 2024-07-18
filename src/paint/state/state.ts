@@ -2,7 +2,6 @@ import {
 	AppWrap,
 	Boundary,
 	EMPTY_BOUNDARY,
-	Pos,
 	boundaryToRect,
 	extractCanvasRect,
 	limitBoundaryToOriginRect,
@@ -13,33 +12,30 @@ import toast from "solid-toast";
 import { HistoryManager } from "../action-history";
 import { Action, UpdateImgAction } from "../actions";
 
-import { ERASER_TYPE_TOOLS, IMAEG_MODIFY_TOOLS, PaintConfig } from "..";
+import { ERASER_TYPE_TOOLS, IMAGE_MODIFY_TOOLS, PaintConfig } from "..";
 
-import { WithBrushSetSignal, installBrushSetSignal } from "./brush";
+import { Accessor, Setter, createSignal } from "solid-js";
+import { execAction, revertAction } from "./action";
+import { WithBrushSetSignal, installBrushSetSignal } from "./w-brush";
 import { clearTempLayer, renderBlurredLayerFromState } from "./composited";
-import { WithConfigSignal, installConfigSignal } from "./config";
-import { WithCursorSignal, installCursorSignal } from "./cursor";
+import { WithConfigSignal, installConfigSignal } from "./w-config";
+import { WithCursorSignal, installCursorSignal } from "./w-cursor";
 import {
 	WithDisplaySignal,
 	fitDisplayTo,
 	installDisplaySignal,
-} from "./display";
+} from "./w-display";
 import { DrawState, stepDrawShape, stepSpoid, stepText } from "./draw";
-import {
-	WithImageInfo,
-	installImageInfo,
-	renderBlurredLayer,
-} from "./image-info";
-import { WithPaletteSignal, installPaletteSignal } from "./palette";
-import { WithToolSettingsSignal, installToolSettingsSignal } from "./tool";
+import { WithImageInfo, installImageInfo } from "./w-image-info";
+import { WithPaletteSignal, installPaletteSignal } from "./w-palette";
+import { WithToolSettingsSignal, installToolSettingsSignal } from "./w-tool";
 import {
 	WithUIInfo,
 	getFocusedLayerCtx,
 	getTempLayerCtx,
 	installUIInfo,
-} from "./ui";
-import { execAction, revertAction } from "./action";
-import { Accessor, Setter, createSignal } from "solid-js";
+} from "./w-ui";
+import { WithBlockSignal, installBlockSignal } from "./w-block";
 
 export type PaintState = WithBrushSetSignal &
 	WithConfigSignal &
@@ -48,6 +44,7 @@ export type PaintState = WithBrushSetSignal &
 	WithImageInfo &
 	WithPaletteSignal &
 	WithToolSettingsSignal &
+	WithBlockSignal &
 	WithUIInfo & {
 		/** History manager */
 		history: HistoryManager<Action>;
@@ -78,6 +75,7 @@ export const createPaintState = (
 		.app(installImageInfo(w, h))
 		.app(installPaletteSignal)
 		.app(installToolSettingsSignal)
+		.app(installBlockSignal)
 		.app(installUIInfo).value;
 
 	const [drawState, setDrawState] = createSignal<DrawState | undefined>();
@@ -120,11 +118,11 @@ export const updateBrushCursorPos = (z: PaintState, dt: number) => {
 		z.setCursor(c => ({ ...c, brush: c.real }));
 	} else {
 		const cfg = z.config();
-		const r = Math.pow(cfg.brushFollowFactor, dt / 1000);
+		const r = (1 - cfg.brushFollowFactor) ** ((10 * dt) / 1000);
 		z.setCursor(c => {
 			return {
 				...c,
-				brush: posOnLine(c.brush, c.real, r),
+				brush: posOnLine(c.real, c.brush, r),
 			};
 		});
 	}
@@ -135,7 +133,7 @@ export const updateBrushCursorPos = (z: PaintState, dt: number) => {
  */
 export const flushTempLayer = (z: PaintState) => {
 	// If nothing to flush, just return.
-	if (z.tempBd.l === Infinity) return;
+	if (z.tempBd.left === Infinity) return;
 
 	const tool = z.toolType();
 	const tempCtx = getTempLayerCtx(z);
@@ -143,25 +141,25 @@ export const flushTempLayer = (z: PaintState) => {
 	const size = z.size();
 
 	// Extract the boundary
-	const bd = limitBoundaryToOriginRect(z.tempBd, size.w, size.h);
+	const bd = limitBoundaryToOriginRect(z.tempBd, size.width, size.height);
 	// Bound to the canvas
 	const rect = boundaryToRect(bd);
 	const oldImg = extractCanvasRect(focusedCtx, rect);
 
 	if (ERASER_TYPE_TOOLS.has(tool)) {
-		focusedCtx.clearRect(rect.x, rect.y, rect.w, rect.h);
+		focusedCtx.clearRect(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	focusedCtx.drawImage(
 		tempCtx.canvas,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 		rect.x,
 		rect.y,
-		rect.w,
-		rect.h,
+		rect.width,
+		rect.height,
 	);
 
 	// Create an action, to be able to revert
@@ -208,7 +206,6 @@ export const executeAction = (z: PaintState, actions: Action[]) => {
  */
 export const handleDrawStart = (z: PaintState) => {
 	const pos = z.cursor().brush;
-	console.log(pos);
 
 	let step;
 	switch (z.toolType()) {
@@ -254,7 +251,7 @@ export const handleDrawEnd = (z: PaintState, cancelled?: boolean) => {
 	z.setDrawState();
 
 	// Only flush the temp layer for brush, eraser, and text
-	if (IMAEG_MODIFY_TOOLS.has(s.tool)) {
+	if (IMAGE_MODIFY_TOOLS.has(s.tool)) {
 		flushTempLayer(z);
 	}
 };

@@ -1,10 +1,10 @@
 import { Accessor, Setter, batch, createSignal } from "solid-js";
 
 import {
-	Pos,
 	ORIGIN,
-	rotateScale2D,
+	Pos,
 	addPos,
+	rotateScale2D,
 	rotateScaleRaw2D,
 	subPos,
 } from "@/common";
@@ -89,6 +89,14 @@ export const invertDisplayTransform = (z: WithDisplaySignal, p: Pos): Pos => {
 	);
 };
 
+export const applyDisplayTransform = (z: WithDisplaySignal, p: Pos): Pos => {
+	const angle = z.angle();
+	return addPos(
+		rotateScaleRaw2D(angle.cos, angle.sin, z.zoom(), p),
+		z.scroll(),
+	);
+};
+
 export const fitDisplayTo = (
 	z: WithImageInfo & WithDisplaySignal,
 	w: number,
@@ -97,11 +105,11 @@ export const fitDisplayTo = (
 	const canvasSize = z.size();
 
 	// Calculate the zoom
-	const zoom = Math.min(w / canvasSize.w, h / canvasSize.h) * 0.95;
+	const zoom = Math.min(w / canvasSize.width, h / canvasSize.height) * 0.95;
 
 	// Calculate the scroll
-	const x = (w - zoom * canvasSize.w) / 2;
-	const y = (h - zoom * canvasSize.h) / 2;
+	const x = (w - zoom * canvasSize.width) / 2;
+	const y = (h - zoom * canvasSize.height) / 2;
 
 	// Set the values
 	batch(() => {
