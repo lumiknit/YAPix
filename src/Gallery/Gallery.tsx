@@ -1,9 +1,7 @@
 import { idb } from "@lumiknit/solid-fekit";
 import { Component, createSignal, onMount } from "solid-js";
 
-type Props = {
-
-};
+type Props = {};
 
 const Gallery: Component<Props> = (props: Props) => {
 	const [cnt, setCnt] = createSignal(-1);
@@ -30,9 +28,11 @@ const Gallery: Component<Props> = (props: Props) => {
 		}
 	});
 
-	return <div>
-		<button onClick={increment}>{cnt()}</button>
-	</div>;
+	return (
+		<div>
+			<button onClick={increment}>{cnt()}</button>
+		</div>
+	);
 };
 
 export default Gallery;

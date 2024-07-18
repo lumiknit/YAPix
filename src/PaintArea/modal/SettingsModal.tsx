@@ -2,6 +2,7 @@ import { Component } from "solid-js";
 
 import {
 	PaintState,
+	executeAction,
 	fitCanvasToRoot,
 	mergeLayersWithNewCtx,
 	rerenderLayers,
@@ -11,12 +12,16 @@ import { ctxToBlob } from "@/common";
 import { TbBrandGithub } from "solid-icons/tb";
 import toast from "solid-toast";
 import { packIntoDubuFmt, unpackFromDubuFmt } from "@/paint/state/comp-file";
+import { execAction } from "@/paint/state/action";
 
 type Props = {
 	z: PaintState;
 };
 
 const SettingsModal: Component<Props> = props => {
+	let changeSizeWidthRef: HTMLInputElement;
+	let changeSizeHeightRef: HTMLInputElement;
+
 	const handleImportImage = (e: Event) => {
 		// Load file blob
 		const input = e.target as HTMLInputElement;
@@ -131,6 +136,48 @@ const SettingsModal: Component<Props> = props => {
 			<div class="pam-item">
 				<span class="label">Import image </span>
 				<input type="file" accept="image/*" onInput={handleImportImage} />
+			</div>
+
+			<hr />
+			<h3> Change Canvas Size </h3>
+			<div class="pam-item">
+				<span class="label"> Width </span>
+				<input
+					ref={changeSizeWidthRef!}
+					type="number"
+					value={props.z.size().width}
+				/>
+			</div>
+			<div class="pam-item">
+				<span class="label"> Height </span>
+				<input
+					ref={changeSizeHeightRef!}
+					type="number"
+					value={props.z.size().height}
+				/>
+			</div>
+			<div class="pam-item">
+				<button
+					onClick={() => {
+						const width = Number(changeSizeWidthRef.value);
+						const height = Number(changeSizeHeightRef.value);
+						if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+							toast.error("Invalid size");
+							return;
+						}
+						executeAction(props.z, [
+							{
+								type: "changeCanvasSize",
+								next: {
+									width,
+									height,
+								},
+							},
+						]);
+					}}>
+					{" "}
+					Change{" "}
+				</button>
 			</div>
 		</>
 	);

@@ -5,7 +5,7 @@ import "./App.scss";
 import { TopRouter, createRouterState } from "./TopRouter";
 
 const App: Component = () => {
-	const routeState = createRouterState("gallery");
+	const routeState = createRouterState("edit");
 
 	return (
 		<div class="app">

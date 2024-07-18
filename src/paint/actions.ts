@@ -3,7 +3,7 @@
  * @description The module contains available actions, and types for edit history.
  */
 
-import { CanvasCtx2D, Rect } from "@/common";
+import { CanvasCtx2D, Rect, Size } from "@/common";
 
 import { Layer } from ".";
 
@@ -64,10 +64,20 @@ export type MergeLayerAction = {
 	destOldImage: ImageData;
 };
 
+/** Change the size of canvas */
+export type ChangeCanvasSizeAction = {
+	type: "changeCanvasSize";
+	prev?: Size;
+	next: Size;
+	oldLayers?: Layer[];
+	newLayers?: Layer[];
+};
+
 export type Action =
 	| UpdateImgAction
 	| NewLayerAction
 	| UpdateLayerInfoAction
 	| DeleteLayerAction
 	| FocusLayerAction
-	| MergeLayerAction;
+	| MergeLayerAction
+	| ChangeCanvasSizeAction;

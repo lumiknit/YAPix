@@ -1,13 +1,18 @@
 import { Gallery } from "@/Gallery";
 import { EditView } from "@/PaintArea";
-import { Accessor, Setter, createSignal } from "solid-js";
+import { Accessor, Component, Setter, createSignal } from "solid-js";
 
-export const PAGES = {
+export type PageType = "gallery" | "edit";
+
+export type ChangePageFn = (p: PageType) => void;
+export type WithChangePageFn = {
+	changePage: ChangePageFn;
+};
+
+export const PAGES: { [key in PageType]: Component<WithChangePageFn> } = {
 	gallery: Gallery,
 	edit: EditView,
 };
-
-export type PageType = keyof typeof PAGES;
 
 export type RouterState = {
 	current: Accessor<PageType>;
