@@ -4,14 +4,13 @@ import {
 	PaintState,
 	fitCanvasToRoot,
 	mergeLayersWithNewCtx,
-	packToDubuFormat,
 	rerenderLayers,
-	unpackFromDubuFormat,
 	updateFocusedLayerData,
 } from "@/paint";
 import { ctxToBlob } from "@/common";
 import { TbBrandGithub } from "solid-icons/tb";
 import toast from "solid-toast";
+import { packIntoDubuFmt, unpackFromDubuFmt } from "@/paint/state/comp-file";
 
 type Props = {
 	z: PaintState;
@@ -39,7 +38,7 @@ const SettingsModal: Component<Props> = props => {
 
 	const handleSaveTemp = async () => {
 		updateFocusedLayerData(props.z);
-		const dubu = await packToDubuFormat(props.z);
+		const dubu = await packIntoDubuFmt(props.z);
 		localStorage.setItem("dubu-temp", JSON.stringify(dubu));
 		toast.success("Saved temp");
 	};
@@ -60,7 +59,7 @@ const SettingsModal: Component<Props> = props => {
 			return;
 		}
 		// Load the data
-		await unpackFromDubuFormat(props.z, dubu);
+		await unpackFromDubuFmt(props.z, dubu);
 		rerenderLayers(props.z);
 		toast.success("Loaded temp");
 	};

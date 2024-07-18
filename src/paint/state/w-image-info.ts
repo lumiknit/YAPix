@@ -49,69 +49,6 @@ export const installImageInfo =
 		});
 	};
 
-// -- Save/load
-
-/**
- * Pack the current state to JSON format (.dubu)
- * Notes:
- * - Block UI until the process is done.
- * - This will convert current 'layers' into dubu format. Before use this function, flush focused layer
- */
-export const packToDubuFormat = async (z: WithImageInfo): Promise<DubuFmt> => {
-	// Convert each layers to PNG base64 format
-	const layers: DubuLayer[] = [];
-	for (const l of z.layers()) {
-		const blob = await ctxToBlob(l.data, "image/png");
-		const u8arr = new Uint8Array(await blob.arrayBuffer());
-		const base64 = btoa(String.fromCharCode(...u8arr));
-		layers.push({
-			...l,
-			data: base64,
-			size: {
-				width: l.data.canvas.width,
-				height: l.data.canvas.height,
-			},
-		});
-	}
-
-	return {
-		name: z.name,
-		size: z.size(),
-		layers,
-	};
-};
-
-/**
- * Unpack the given JSON format to the current state.
- */
-export const unpackFromDubuFormat = async (z: WithImageInfo, fmt: DubuFmt) => {
-	const decoded: HTMLImageElement[] = [];
-	for (const l of fmt.layers) {
-		const img = new Image();
-		img.src = `data:image/png;base64,${l.data}`;
-		await img.decode();
-		console.log(img);
-		decoded.push(img);
-	}
-
-	batch(() => {
-		z.name = fmt.name;
-		z.setSize(fmt.size);
-
-		const newLayers: Layer[] = [];
-		for (let i = 0; i < decoded.length; i++) {
-			const l = fmt.layers[i];
-			const newLayer = {
-				...l,
-				data: emptyCanvasContext(l.size.width, l.size.height),
-			};
-			newLayer.data.drawImage(decoded[i], 0, 0);
-			newLayers.push(newLayer);
-		}
-		z.setLayers(newLayers);
-	});
-};
-
 /**
  * Merge all layers and return the new canvas context.
  * This can be used to export image.
